@@ -4,13 +4,18 @@ import matplotlib
 import matplotlib.pyplot as plt
 import datetime
 
-def substringFilter(inputstring):
+#HEADERS: num, subnum, thread_num, op, timestamp, timestamp_expired, preview_orig,
+# preview_w, preview_h, media_filename, media_w, media_h, media_size,
+# media_hash, media_orig, spoiler, deleted, capcode, email, name, trip,
+# title, comment, sticky, locked, poster_hash, poster_country, exif
+
+def substringFilter(inputstring, histogram=False):
 	querystring = inputstring.lower()
 	conn = sqlite3.connect("../4plebs_pol_test_database.db")
 	df = pd.read_sql_query("SELECT timestamp, comment FROM 'polsample' WHERE lower(comment) LIKE ?;", conn, params=['%' + querystring + '%'])
 	print(df)
 	df.to_csv('test_output.csv')
-	return df, querystring
+	createHistogram(df, querystring)
 
 def createHistogram(inputdf, querystring):
 	df = inputdf
@@ -55,7 +60,6 @@ def createHistogram(inputdf, querystring):
 	plt.gcf().autofmt_xdate()
 	plt.show()
 
-result = substringFilter('clinton')	#returns tuple with df and input string
-createHistogram(result[0], result[1])
+result = substringFilter('donald trump', histogram=True)	#params: query and generate histogram
 
 print('finished')
