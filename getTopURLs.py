@@ -12,14 +12,18 @@ import operator
 
 
 def getTopURLs(piegraph = False, threshold=20):
-	conn = sqlite3.connect("../4plebs_pol_test_database.db")
+	conn = sqlite3.connect("../4plebs_pol_withheaders.db")
 
-	urlSQLquery = "SELECT comment, thread_num, timestamp, poster_country FROM polsample WHERE (comment LIKE '%http://%' OR comment LIKE '%https://%' OR comment LIKE '%www.%');"
+	print('Running SQL query')
+	urlSQLquery = "SELECT comment, thread_num, timestamp, poster_country FROM poldatabase WHERE (comment LIKE '%http://%' OR comment LIKE '%https://%' OR comment LIKE '%www.%');"
 	df = pd.read_sql_query(urlSQLquery, conn)
+	print('Extracting URL regex from DataFrame')
 	df['url'] = df['comment'].str.extract('([\/\/|www\.][0-9a-z\.]*\.[0-9a-z\.]+)')
 	print(df['url'][:9])
-	df.to_csv('top_urls.csv')
+	print('Writing csv')
+	#df.to_csv('top_urls.csv')
 
+	print('Formatting data for pie graph')
 	li_urls = df['url'].values.tolist()
 
 	di_all_urls = {}
@@ -28,7 +32,7 @@ def getTopURLs(piegraph = False, threshold=20):
 			di_all_urls[url] = 1
 		else:
 			di_all_urls[url] += 1
-	print(di_all_urls)
+	#print(di_all_urls)
 
 	most_used_url = max(di_all_urls.items(), key=operator.itemgetter(1))[0]
 	di_pie_urls = {}
@@ -43,6 +47,7 @@ def getTopURLs(piegraph = False, threshold=20):
 			else:
 				di_pie_urls[formatted_url] = value
 
+	print('Plotting pie graph')
 	createPieGraph(di_pie_urls)
 
 def createPieGraph(dictionary):
