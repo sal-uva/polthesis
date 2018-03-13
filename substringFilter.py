@@ -42,7 +42,7 @@ def createHistogram(inputdf, querystring, inputtimeformat):
 		print(enddate)
 		count_days = delta.days + 2
 		print(count_days)
-		for i in range((enddate-startdate).days + 1):  
+		for i in range((enddate-startdate).days + 1):
 		    li_timeticks.append(startdate + (i) * one_day)
 		dateformat = '%d-%m-%y'
 		#convert UNIX timespamp
