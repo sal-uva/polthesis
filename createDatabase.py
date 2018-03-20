@@ -1,11 +1,11 @@
 import pandas as pd
 from sqlalchemy import create_engine
 
-pol_database = create_engine('sqlite:///4plebs_pol_test.db')
+pol_database = create_engine('sqlite:///4plebs_pol_18_03_2018.db')
 
 # quit()
 
-file = '../pol.csv'
+file = '../../pol_18_03_2018.csv'
 chunksize = 100000
 i = 0
 j = 1
@@ -17,8 +17,6 @@ for df in pd.read_csv(file, escapechar='\\', encoding='utf-8', engine='python', 
       
       df.index += j
       i+=1
-      df.to_sql('poldatabase', pol_database, index=False, if_exists='append')
+      df.to_sql('poldatabase_18_03_2018', pol_database, index=False, if_exists='append')
       j = df.index[-1] + 1
       print(str(i))
-      if i == 10:
-      	break

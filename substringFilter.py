@@ -14,10 +14,10 @@ from collections import OrderedDict
 def substringFilter(inputstring, histogram = False, inputtime = 'months'):
 	querystring = inputstring.lower()
 	print('Connecting to database')
-	conn = sqlite3.connect("../4plebs_pol_withheaders.db")
+	conn = sqlite3.connect("../4plebs_pol_18_03_2018.db")
 
 	print('Beginning SQL query for "' + querystring + '"')
-	df = pd.read_sql_query("SELECT timestamp, comment FROM poldatabase WHERE lower(comment) LIKE ?;", conn, params=['%' + querystring + '%'])
+	df = pd.read_sql_query("SELECT timestamp, comment FROM poldatabase_18_03_2018 WHERE lower(comment) LIKE ?;", conn, params=['%' + querystring + '%'])
 	print('Writing results to csv')
 	df.to_csv('test_output.csv')
 
@@ -89,6 +89,6 @@ def createHistogram(inputdf, querystring, inputtimeformat):
 	plt.gcf().autofmt_xdate()
 	plt.show()
 
-result = substringFilter('richard spencer', histogram = True, inputtime='months')	#returns tuple with df and input string
+result = substringFilter('hitler', histogram = True, inputtime='months')	#returns tuple with df and input string
 
 print('finished')

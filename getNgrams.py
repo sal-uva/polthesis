@@ -1,4 +1,3 @@
-
 import sqlite3
 import pandas as pd
 import matplotlib
@@ -17,12 +16,12 @@ from nltk.corpus import stopwords
 # media_hash, media_orig, spoiler, deleted, capcode, email, name, trip,
 # title, comment, sticky, locked, poster_hash, poster_country, exif
 
-def getNgrams(querystring, fullcomment = True, colocationamount = 1, windowsize = 4, outputlimit = 10, separateontime = False, timeseparator = 'days', frequencyfilter = 1):
+def getNgrams(querystring, fullcomment = True, colocationamount = 1, windowsize = 4, outputlimit = 10, separateontime = False, timeseparator = 'days', frequencyfilter = 1, timeoffset=None):
 	separateontime = separateontime
 	maxoutput = outputlimit
 
 	print('Connecting to database')
-	conn = sqlite3.connect("../4plebs_pol_test_database.db")
+	conn = sqlite3.connect("../4plebs_pol_withheaders.db")
 
 	print('Beginning SQL query for "' + querystring + '"')
 	df = pd.read_sql_query("SELECT timestamp, comment FROM poldatabase WHERE lower(comment) LIKE ?;", conn, params=['%' + querystring + '%'])
@@ -196,7 +195,10 @@ def createColocationCsv(inputcolocations):
 	print(df)
 	return(df)
 
-ngrams = getNgrams('clinton', fullcomment=True, colocationamount=1, windowsize=3, frequencyfilter=0, outputlimit=10, separateontime=True, timeseparator='days')
+altrightglossary = ['trump','praise','kek','triggered','msm']
+
+for word in altrightglossary:
+	ngrams = getNgrams(word, fullcomment=False, colocationamount=2, windowsize=4, frequencyfilter=1, outputlimit=50, separateontime=True, timeseparator='months')
 
 print(ngrams)
 print('Colocations completed')
