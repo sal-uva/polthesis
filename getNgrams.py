@@ -195,7 +195,7 @@ def createColocationCsv(inputcolocations):
 	print(df)
 	return(df)
 
-altrightglossary = ['trump','praise','kek','triggered','msm']
+altrightglossary = ['ourguy','based','btfo']
 
 for word in altrightglossary:
 	ngrams = getNgrams(word, fullcomment=False, colocationamount=2, windowsize=4, frequencyfilter=1, outputlimit=50, separateontime=True, timeseparator='months')

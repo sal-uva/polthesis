@@ -89,6 +89,6 @@ def createHistogram(inputdf, querystring, inputtimeformat):
 	plt.gcf().autofmt_xdate()
 	plt.show()
 
-result = substringFilter('hitler', histogram = True, inputtime='months')	#returns tuple with df and input string
+result = substringFilter('race realis', histogram = True, inputtime='months')	#returns tuple with df and input string
 
 print('finished')

@@ -11,13 +11,13 @@ from datetime import datetime, timedelta
 def getMostPopularThreads(timeframe='full', limit=25):
 
 	print('Connecting to database')
-	conn = sqlite3.connect("../4plebs_pol_test_database.db")
+	conn = sqlite3.connect("../4plebs_pol_18_03_2018.db")
 	print('Beginning SQL query to get most popular threads')
 
 	limit = limit
 	headers = ['date','comments','timestamp','thread_num','op','title','comment']
 	if timeframe=='full':
-		df_timethreads = pd.read_sql_query("SELECT COUNT(*)comments, timestamp, thread_num, title, comment, MAX(op) AS op FROM poldatabase GROUP BY thread_num ORDER BY comments DESC, op DESC LIMIT ?;", conn, params=[limit])
+		df_timethreads = pd.read_sql_query("SELECT COUNT(*)comments, timestamp, thread_num, title, comment, MAX(op) AS op FROM poldatabase_18_03_2018 GROUP BY thread_num ORDER BY comments DESC, op DESC LIMIT ?;", conn, params=[limit])
 		li_dates = []
 		dateformat = '%Y-%m-%d-%H:%M:%S'
 		for timestamp in df_timethreads['timestamp']:
@@ -29,7 +29,7 @@ def getMostPopularThreads(timeframe='full', limit=25):
 		elif timeframe == 'months':
 			dateformat = '%Y-%m'
 		print('Getting first and last timestamps')
-		dates = pd.read_sql_query("SELECT DISTINCT(timestamp) FROM poldatabase;", conn)
+		dates = pd.read_sql_query("SELECT DISTINCT(timestamp) FROM poldatabase_18_03_2018;", conn)
 		print(dates)
 		li_alldates = dates['timestamp'].values.tolist()
 		li_alldates.sort()
