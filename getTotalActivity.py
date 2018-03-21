@@ -16,13 +16,16 @@ from nltk.corpus import stopwords
 # media_hash, media_orig, spoiler, deleted, capcode, email, name, trip,
 # title, comment, sticky, locked, poster_hash, poster_country, exif
 
-def getTotalActivity():
+def getTotalActivity(dateformat='months'):
 	print('Connecting to database')
-	conn = sqlite3.connect("../4plebs_pol_18_03_2018.db")
+	conn = sqlite3.connect("../4plebs_pol_test_database.db")
 
-	dateformat = '%Y-%m'
+	if dateformat == 'months':
+		dateformat = '%Y-%m'
+	elif dateformat == 'days':
+		dateformat = '%Y-%m-%d'
 	print('Beginning SQL query')
-	dates = pd.read_sql_query("SELECT DISTINCT(timestamp) FROM poldatabase_18_03_2018;", conn)
+	dates = pd.read_sql_query("SELECT DISTINCT(timestamp) FROM poldatabase;", conn)
 	print(dates)
 	li_alldates = dates['timestamp'].values.tolist()
 	li_alldates.sort()
@@ -30,7 +33,10 @@ def getTotalActivity():
 	lastdate = li_alldates[len(li_alldates) - 1]
 	print(firstdate, lastdate)
 
-	headers=['timestamp']
+	li_dates = []
+	li_countposts = []
+
+	headers=['date','posts']
 	df_timethreads = pd.DataFrame(columns=headers)
 	newtime = ''
 	minquerydate = firstdate
@@ -42,20 +48,21 @@ def getTotalActivity():
 			#if there's a new date
 			if currenttime != newtime:
 				print('SQL query for ' + str(newtime))
+				timestring = str(newtime)
 				maxquerydate = timestamp
 				df = pd.DataFrame
-				df = pd.read_sql_query("SELECT COUNT(*)posts, op FROM poldatabase_18_03_2018 WHERE timestamp > ? AND timestamp < ? GROUP BY op;", conn, params=[minquerydate, maxquerydate])
-				tmp_dates = []
-				for x in range(len(df['op'])):
-					tmp_dates.append(newtime)
-				#tmp_dates = pd.Series(tmp_dates)
-				df['date'] = tmp_dates
-				df_timethreads = df_timethreads.append(df)
+				df = pd.read_sql_query("SELECT COUNT(*)count FROM poldatabase WHERE timestamp > :firsttime AND timestamp < :lasttime;", conn, params={'dateheader': newtime, 'firsttime': minquerydate, 'lasttime': maxquerydate})
+				
+				li_dates.append(str(newtime))
+				li_countposts.append(df['count'][0])
 				
 				minquerydate = timestamp
 				currenttime = newtime
+
+	df_timethreads['date'] = li_dates
+	df_timethreads['posts'] = li_countposts
 	print('Writing results to csv')
-	df_timethreads.to_csv('all_activity.csv')
+	df_timethreads.to_csv('all_activity.csv', index=False)
 	print(df_timethreads)
 
-getTotalActivity()
+getTotalActivity(dateformat='days')
