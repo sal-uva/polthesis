@@ -73,4 +73,4 @@ def getTotalActivity(dateformat='months'):
 	df_timethreads.to_csv('all_activity.csv', index=False)
 	print(df_timethreads)
 
-getTotalActivity(dateformat='months')
+getTotalActivity(dateformat='days')
