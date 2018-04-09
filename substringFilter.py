@@ -1,33 +1,96 @@
 
 import sqlite3
 import pandas as pd
+import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
 import time
+import re
+from nltk.corpus import stopwords
 from scipy.interpolate import spline
 from datetime import datetime, timedelta
 from collections import OrderedDict
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 #HEADERS: num, subnum, thread_num, op, timestamp, timestamp_expired, preview_orig,
 # preview_w, preview_h, media_filename, media_w, media_h, media_size,
 # media_hash, media_orig, spoiler, deleted, capcode, email, name, trip,
 # title, comment, sticky, locked, poster_hash, poster_country, exif
 
-def substringFilter(inputstring, histogram = False, inputtime = 'months', normalised=False):
+def substringFilter(inputstring, histogram = False, inputtime = 'months', normalised=False, writetext=False, textsimilarity = False):
 	querystring = inputstring.lower()
 	print('Connecting to database')
-	conn = sqlite3.connect("../4plebs_pol_18_03_2018.db")
+	conn = sqlite3.connect("../4plebs_pol_test_database.db")
 
 	print('Beginning SQL query for "' + querystring + '"')
-	df = pd.read_sql_query("SELECT timestamp, comment FROM poldatabase_18_03_2018 WHERE lower(comment) LIKE ?;", conn, params=['%' + querystring + '%'])
+	df = pd.read_sql_query("SELECT timestamp, comment FROM poldatabase WHERE lower(comment) LIKE ?;", conn, params=['%' + querystring + '%'])
 	print('Writing results to csv')
 	df.to_csv('substring_mentions/mentions_' + querystring + '.csv')
+
+	if writetext == True:
+		df_parsed = pd.DataFrame(columns=['comments','time'])
+		df_parsed['comments'] = df['comment']
+		#note: make day seperable later
+		df_parsed['time'] = [datetime.strftime(datetime.fromtimestamp(i), "%m-%Y") for i in df['timestamp']]
+		df_parsed['comments'] = [re.sub(r'>', '', z) for z in df_parsed['comments']]
+		
+		print(df_parsed['comments'])
+		#write text file for separate months
+		currenttime = df_parsed['time'][1]
+		oldindex = 1
+
+		li_keystrings = []
+		li_stringdates = []
+		#create text files for each month
+		for index, distincttime in enumerate(df_parsed['time']):
+			if distincttime != currenttime or index == (len(df_parsed['time']) - 1):
+				print(currenttime, distincttime)
+				
+				df_sliced = df_parsed[oldindex:index]
+				print(df_sliced)
+				string = writeToText(df_sliced, querystring, currenttime)
+				li_keystrings.append(string)
+				oldindex = index + 1
+				li_stringdates.append(currenttime)
+				currenttime = distincttime				
 
 	# FOR DEBUGGING PURPOSES:
 	#df = pd.read_csv('substring_mentions/mentions_alt-left.csv')
 	
+	if textsimilarity == True:
+		#do some cleanup: only alphabetic characters, no stopwords
+		for string in li_keystrings:
+			regex = re.compile('[^a-zA-Z]')
+			regex.sub('', string)
+			wordlist = re.sub("[^\w]", " ", string).split()
+			wordlist = [word for word in wordlist if word not in set(stopwords.words('english'))]
+			string = ' '.join(wordlist)
+			#print(string)
+		
+		print('Calculating cosine differences')
+		vect = TfidfVectorizer(min_df=1)
+		tfidf = vect.fit_transform(li_keystrings)
+		similarityvector = (tfidf * tfidf.T).A
+		print(similarityvector)
+		print(type(similarityvector))
+
+		print('Writing similarity vector to csv')
+		df_similarity = pd.DataFrame(similarityvector, index=li_stringdates, columns=li_stringdates)
+		df_similarity.to_csv('substring_mentions/tfidf_' + querystring + '.csv')
+
 	if histogram == True:
 		createHistogram(df, querystring, inputtime, normalised)
+
+def writeToText(inputdf, querystring, currenttime):
+	txtfile = open('substring_mentions/longstring_' + querystring + '_' + currenttime + '.txt', 'w', encoding='utf-8')
+	str_keyword = ''
+	for item in inputdf['comments']:
+		item = item.lower()
+		regex = re.compile("[^a-zA-Z \.\n]")		#excludes numbers, might have to revise this
+		item = regex.sub("", item)
+		txtfile.write("%s" % item)
+		str_keyword = str_keyword + item
+	return str_keyword
 
 def createHistogram(inputdf, querystring, inputtimeformat, normalised):
 	df = inputdf
@@ -65,15 +128,14 @@ def createHistogram(inputdf, querystring, inputtimeformat, normalised):
 		for tot_m in range(total_months(start) - 1, total_months(end)):
 			y, m = divmod(tot_m, 12)
 			li_timeticks.append(datetime(y, m+1, 1).strftime("%m-%y"))
-		print(li_timeticks)
+		#print(li_timeticks)
 		dateformat = '%m-%y'
 		mpl_dates = matplotlib.dates.epoch2num(li_timestamps)
-		
 		
 		timebuckets = [datetime.strptime(i, "%m-%y") for i in li_timeticks]
 		timebuckets = matplotlib.dates.date2num(timebuckets)
 
-		print(li_timeticks)
+		#print(li_timeticks)
 		count_timestamps = 0
 		month = 0
 		if normalised:
@@ -81,8 +143,8 @@ def createHistogram(inputdf, querystring, inputtimeformat, normalised):
 
 			li_totalcomments = [1,61519,1212183,1169314,1057428,1234152,1135162,1195313,1127383,1491844,1738433,1571584,1424278,1441101,909278,772111,890495,1197976,1300518,1381517,1392446,1597274,1903111,2000023,2004026,2344421,2592275,2925369,3111713,3736528,3048962,3131789,3642871,4314923,3618363,3759066,4418571,5515200,4187400,5191531,4368911,4386181,4428757,4374011,4020058,3752418,4087688,3703119,3931560,4122068,3584861,3624546,3468642]
 
-		print(mpl_dates)
-		print(timebuckets)
+		#print(mpl_dates)
+		#print(timebuckets)
 
 	# plot it!
 	fig, ax = plt.subplots(1,1)
@@ -111,27 +173,27 @@ def createHistogram(inputdf, querystring, inputtimeformat, normalised):
 	plt.close()
 
 	newli_timeticks = list(di_totalcomment.keys())
-	print(len(newli_timeticks))
+	#print(len(newli_timeticks))
 
 	li_counts = []
-	print(ax.xaxis.get_ticklabels())
+	#print(ax.xaxis.get_ticklabels())
 	li_axisticks = ax.xaxis.get_majorticklabels()
 	li_axisticks = li_axisticks[:-3]
 	li_axisticks = li_axisticks[3:]
-	print(li_axisticks)
+	#print(li_axisticks)
 	li_matchticks = []
 	for text in li_axisticks:
 		strtext = text.get_text()
 		li_matchticks.append(strtext)
 	print(len(li_matchticks))
 	print('matching months: ' + str(li_matchticks))
-	print('histo data:')
-	print(histo)
-	print('histo len: ' + str(len(histo[0])))
-	print(len(li_matchticks))
-	print(li_matchticks)
-	print(newli_timeticks)
-	print(histo[0])
+	#print('histo data:')
+	#print(histo)
+	#print('histo len: ' + str(len(histo[0])))
+	#print(len(li_matchticks))
+	#print(li_matchticks)
+	#print(newli_timeticks)
+	#print(histo[0])
 	#loop over each month
 	histoindex = 0
 	for month in range(53):
@@ -151,9 +213,9 @@ def createHistogram(inputdf, querystring, inputtimeformat, normalised):
 
 	li_normalisedcounts = []
 	for index, count in enumerate(li_counts):
-		print(li_totalcomments[index])
+		#print(li_totalcomments[index])
 		count_normalised = (count / li_totalcomments[index]) * 100
-		print(count_normalised)
+		#print(count_normalised)
 		li_normalisedcounts.append(count_normalised)
 
 	li_datesformatted = []
@@ -218,8 +280,8 @@ def plotNewGraph(df, query):
 	plt.savefig('../visualisations/substring_counts/' + query + '.svg', dpi='figure')
 	plt.savefig('../visualisations/substring_counts/' + query + '.jpg', dpi='figure')
 
-li_querywords = ['jidf','gook','thot','paypig','orbiter','alpha male','chucklefuck','spic','coalburner']
+li_querywords = ['nigger']
 
 for word in li_querywords:
-	result = substringFilter(word, histogram = True, inputtime='months', normalised=True)	#returns tuple with df and input string
+	result = substringFilter(word, histogram = True, inputtime='months', normalised=True, writetext=True, textsimilarity = True)	#returns tuple with df and input string
 print('finished')
