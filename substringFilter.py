@@ -1,9 +1,11 @@
 
 import sqlite3
 import pandas as pd
+import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
 import time
+import re
 from scipy.interpolate import spline
 from datetime import datetime, timedelta
 from collections import OrderedDict
@@ -13,16 +15,29 @@ from collections import OrderedDict
 # media_hash, media_orig, spoiler, deleted, capcode, email, name, trip,
 # title, comment, sticky, locked, poster_hash, poster_country, exif
 
-def substringFilter(inputstring, histogram = False, inputtime = 'months', normalised=False):
+def substringFilter(inputstring, histogram = False, inputtime = 'months', normalised=False, writetext=False):
 	querystring = inputstring.lower()
 	print('Connecting to database')
-	conn = sqlite3.connect("../4plebs_pol_18_03_2018.db")
+	conn = sqlite3.connect("../4plebs_pol_test_database.db")
 
 	print('Beginning SQL query for "' + querystring + '"')
-	df = pd.read_sql_query("SELECT timestamp, comment FROM poldatabase_18_03_2018 WHERE lower(comment) LIKE ?;", conn, params=['%' + querystring + '%'])
+	df = pd.read_sql_query("SELECT timestamp, comment FROM poldatabase WHERE lower(comment) LIKE ?;", conn, params=['%' + querystring + '%'])
 	print('Writing results to csv')
 	df.to_csv('substring_mentions/mentions_' + querystring + '.csv')
 
+	if writetext == True:
+		df_parsed = df['comment']
+		#df_parsed = [re.sub(r'\n', '.', c) for c in df_parsed]
+		df_parsed = [re.sub(r'>', ' ', i) for i in df_parsed]
+		#df_parsed = [re.sub(r'"', '', x) for x in df_parsed]
+		#print(df_parsed)
+		thefile = open('substring_mentions/longstring_' + querystring + '.txt', 'w', encoding='utf-8')
+		for item in df_parsed:
+			item = item.lower()
+			regex = re.compile("[^a-zA-Z \.]")		#excludes numbers, might have to revise this
+			item = regex.sub("", item)
+			thefile.write("%s" % item)
+		#df_parsed.to_csv('dftext_test.txt', sep=' ', index=False, header=False)
 	# FOR DEBUGGING PURPOSES:
 	#df = pd.read_csv('substring_mentions/mentions_alt-left.csv')
 	
@@ -218,8 +233,8 @@ def plotNewGraph(df, query):
 	plt.savefig('../visualisations/substring_counts/' + query + '.svg', dpi='figure')
 	plt.savefig('../visualisations/substring_counts/' + query + '.jpg', dpi='figure')
 
-li_querywords = ['jidf','gook','thot','paypig','orbiter','alpha male','chucklefuck','spic','coalburner']
+li_querywords = ['cuck']
 
 for word in li_querywords:
-	result = substringFilter(word, histogram = True, inputtime='months', normalised=True)	#returns tuple with df and input string
+	result = substringFilter(word, histogram = True, inputtime='months', normalised=True, writetext=True)	#returns tuple with df and input string
 print('finished')
