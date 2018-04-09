@@ -40,7 +40,7 @@ def substringFilter(inputstring, histogram = False, inputtime = 'months', normal
 		oldindex = 1
 
 		li_keystrings = []
-
+		li_stringdates = []
 		#create text files for each month
 		for index, distincttime in enumerate(df_parsed['time']):
 			if distincttime != currenttime or index == (len(df_parsed['time']) - 1):
@@ -51,6 +51,7 @@ def substringFilter(inputstring, histogram = False, inputtime = 'months', normal
 				string = writeToText(df_sliced, querystring, currenttime)
 				li_keystrings.append(string)
 				oldindex = index + 1
+				li_stringdates.append(currenttime)
 				currenttime = distincttime				
 
 	# FOR DEBUGGING PURPOSES:
@@ -71,8 +72,11 @@ def substringFilter(inputstring, histogram = False, inputtime = 'months', normal
 		tfidf = vect.fit_transform(li_keystrings)
 		similarityvector = (tfidf * tfidf.T).A
 		print(similarityvector)
-		similarityfile = open('substring_mentions/tfidf_' + querystring + '.txt', 'w')
-		similarityfile.write(str(similarityvector))
+		print(type(similarityvector))
+
+		print('Writing similarity vector to csv')
+		df_similarity = pd.DataFrame(similarityvector, index=li_stringdates, columns=li_stringdates)
+		df_similarity.to_csv('substring_mentions/tfidf_' + querystring + '.csv')
 
 	if histogram == True:
 		createHistogram(df, querystring, inputtime, normalised)
@@ -276,7 +280,7 @@ def plotNewGraph(df, query):
 	plt.savefig('../visualisations/substring_counts/' + query + '.svg', dpi='figure')
 	plt.savefig('../visualisations/substring_counts/' + query + '.jpg', dpi='figure')
 
-li_querywords = ['skyrim']
+li_querywords = ['nigger']
 
 for word in li_querywords:
 	result = substringFilter(word, histogram = True, inputtime='months', normalised=True, writetext=True, textsimilarity = True)	#returns tuple with df and input string
