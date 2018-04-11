@@ -7,6 +7,11 @@ from datetime import datetime, timedelta
 # media_hash, media_orig, spoiler, deleted, capcode, email, name, trip,
 # title, comment, sticky, locked, poster_hash, poster_country, exif
 
+# test db: 4plebs_pol_test_database
+# test table: poldatabase
+# full db: 4plebs_pol_18_03_2018
+# full table: poldatabase_18_03_2018
+
 #generates a csv with the most commented on threads, per day, month, or in total. Limit denotes when to stop
 def getMostPopularThreads(timeframe='full', limit=25):
 

@@ -16,6 +16,11 @@ from nltk.corpus import stopwords
 # media_hash, media_orig, spoiler, deleted, capcode, email, name, trip,
 # title, comment, sticky, locked, poster_hash, poster_country, exif
 
+# test db: 4plebs_pol_test_database
+# test table: poldatabase
+# full db: 4plebs_pol_18_03_2018
+# full table: poldatabase_18_03_2018
+
 def getTotalActivity(dateformat='months'):
 	print('Connecting to database')
 	conn = sqlite3.connect("../4plebs_pol_18_03_2018.db")
