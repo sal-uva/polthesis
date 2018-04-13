@@ -16,6 +16,11 @@ from nltk.corpus import stopwords
 # media_hash, media_orig, spoiler, deleted, capcode, email, name, trip,
 # title, comment, sticky, locked, poster_hash, poster_country, exif
 
+# test db: 4plebs_pol_test_database
+# test table: poldatabase
+# full db: 4plebs_pol_18_03_2018
+# full table: poldatabase_18_03_2018
+
 def getNgrams(querystring, fullcomment = True, colocationamount = 1, windowsize = 4, outputlimit = 10, separateontime = False, timeseparator = 'days', frequencyfilter = 1, timeoffset=None):
 	separateontime = separateontime
 	maxoutput = outputlimit

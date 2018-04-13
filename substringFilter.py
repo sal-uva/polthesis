@@ -17,14 +17,28 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 # media_hash, media_orig, spoiler, deleted, capcode, email, name, trip,
 # title, comment, sticky, locked, poster_hash, poster_country, exif
 
-def substringFilter(inputstring, histogram = False, inputtime = 'months', normalised=False, writetext=False, textsimilarity = False):
+# test db: 4plebs_pol_test_database
+# test table: poldatabase
+# full db: 4plebs_pol_18_03_2018
+# full table: poldatabase_18_03_2018
+
+def substringFilter(inputstring, histogram = False, subject = False, inputtime = 'months', normalised=False, writetext=False, textsimilarity = False):
 	querystring = inputstring.lower()
+
 	print('Connecting to database')
-	conn = sqlite3.connect("../4plebs_pol_test_database.db")
+	conn = sqlite3.connect("../4plebs_pol_18_03_2018.db")
 
 	print('Beginning SQL query for "' + querystring + '"')
-	df = pd.read_sql_query("SELECT timestamp, comment FROM poldatabase WHERE lower(comment) LIKE ?;", conn, params=['%' + querystring + '%'])
+	if subject == False:
+		df = pd.read_sql_query("SELECT timestamp, comment FROM poldatabase_18_03_2018 WHERE lower(comment) LIKE ?;", conn, params=['%' + querystring + '%'])
+	else:
+		df = pd.read_sql_query("SELECT timestamp, title FROM poldatabase_18_03_2018 WHERE lower(title) LIKE ?;", conn, params=['%' + querystring + '%'])
+
 	print('Writing results to csv')
+	if '/' in querystring:
+		querystring = re.sub(r'/', '', querystring)
+	else:
+		querystring = querystring
 	df.to_csv('substring_mentions/mentions_' + querystring + '.csv')
 
 	if writetext == True:
@@ -96,7 +110,6 @@ def createHistogram(inputdf, querystring, inputtimeformat, normalised):
 	df = inputdf
 	timeformat = inputtimeformat
 	li_timestamps = df['timestamp'].values.tolist()
-
 	li_timeticks = []
 
 	dateformat = '%d-%m-%y'
@@ -127,7 +140,7 @@ def createHistogram(inputdf, querystring, inputtimeformat, normalised):
 		li_timeticks = []
 		for tot_m in range(total_months(start) - 1, total_months(end)):
 			y, m = divmod(tot_m, 12)
-			li_timeticks.append(datetime(y, m+1, 1).strftime("%m-%y"))
+			li_timeticks.append(datetime(y, m + 1, 1).strftime("%m-%y"))
 		#print(li_timeticks)
 		dateformat = '%m-%y'
 		mpl_dates = matplotlib.dates.epoch2num(li_timestamps)
@@ -178,8 +191,8 @@ def createHistogram(inputdf, querystring, inputtimeformat, normalised):
 	li_counts = []
 	#print(ax.xaxis.get_ticklabels())
 	li_axisticks = ax.xaxis.get_majorticklabels()
-	li_axisticks = li_axisticks[:-3]
-	li_axisticks = li_axisticks[3:]
+	li_axisticks = li_axisticks[:-2]
+	li_axisticks = li_axisticks[2:]
 	#print(li_axisticks)
 	li_matchticks = []
 	for text in li_axisticks:
@@ -272,13 +285,13 @@ def plotNewGraph(df, query):
 	ax1.set_ylabel('Absolute amount', color='#52b6dd')
 	ax2.set_ylabel('Percentage of total comments', color='#d12d04')
 	ax2.set_ylim(bottom=0)
-	plt.title('Amount of 4chan/pol/ comments containing "' + query + '"')
+	plt.title('Amount of 4chan/pol/ comments containing "' + query + '" and having the "NL"-countryflag')
 
 	plt.savefig('../visualisations/substring_counts/' + query + '.svg', dpi='figure')
 	plt.savefig('../visualisations/substring_counts/' + query + '.jpg', dpi='figure')
 
-li_querywords = ['nigger']
+li_querywords = ['kek']
 
 for word in li_querywords:
-	result = substringFilter(word, histogram = True, inputtime='months', normalised=True, writetext=True, textsimilarity = True)	#returns tuple with df and input string
+	result = substringFilter(word, histogram = True, subject=False, inputtime='months', normalised=True, writetext=False, textsimilarity = False)	#returns tuple with df and input string
 print('finished')

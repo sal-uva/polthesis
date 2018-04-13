@@ -7,6 +7,11 @@ from datetime import datetime, timedelta
 # media_hash, media_orig, spoiler, deleted, capcode, email, name, trip,
 # title, comment, sticky, locked, poster_hash, poster_country, exif
 
+# test db: 4plebs_pol_test_database
+# test table: poldatabase
+# full db: 4plebs_pol_18_03_2018
+# full table: poldatabase_18_03_2018
+
 #generates a csv with the most commented on threads, per day, month, or in total. Limit denotes when to stop
 def getMostPopularThreads(timeframe='full', limit=25):
 
@@ -17,7 +22,7 @@ def getMostPopularThreads(timeframe='full', limit=25):
 	limit = limit
 	headers = ['date','comments','timestamp','thread_num','op','title','comment']
 	if timeframe=='full':
-		df_timethreads = pd.read_sql_query("SELECT COUNT(*)comments, timestamp, thread_num, title, comment, MAX(op) AS op FROM poldatabase_18_03_2018 GROUP BY thread_num ORDER BY comments DESC, op DESC LIMIT ?;", conn, params=[limit])
+		df_timethreads = pd.read_sql_query("SELECT COUNT(*)comments, timestamp, thread_num, title, comment, MAX(op) AS op FROM poldatabase_18_03_2018 WHERE comment LIKE '%cuck%' GROUP BY thread_num ORDER BY comments DESC, op DESC LIMIT ?;", conn, params=[limit])
 		li_dates = []
 		dateformat = '%Y-%m-%d-%H:%M:%S'
 		for timestamp in df_timethreads['timestamp']:
