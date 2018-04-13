@@ -1,4 +1,4 @@
-
+from __future__ import print_function
 import sqlite3
 import pandas as pd
 import numpy as np
@@ -6,33 +6,44 @@ import matplotlib
 import matplotlib.pyplot as plt
 import time
 import re
+import os
+import calculateDocSimilarity
+import nltk
+from nltk.stem.snowball import SnowballStemmer
 from nltk.corpus import stopwords
 from scipy.interpolate import spline
 from datetime import datetime, timedelta
 from collections import OrderedDict
 from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.cluster import KMeans
+from sklearn.externals import joblib
+from sklearn.manifold import MDS
 
 #HEADERS: num, subnum, thread_num, op, timestamp, timestamp_expired, preview_orig,
 # preview_w, preview_h, media_filename, media_w, media_h, media_size,
 # media_hash, media_orig, spoiler, deleted, capcode, email, name, trip,
 # title, comment, sticky, locked, poster_hash, poster_country, exif
 
-# test db: 4plebs_pol_test_database
-# test table: poldatabase
 # full db: 4plebs_pol_18_03_2018
 # full table: poldatabase_18_03_2018
+# test db: 4plebs_pol_test_database
+# test table: poldatabase
 
-def substringFilter(inputstring, histogram = False, subject = False, inputtime = 'months', normalised=False, writetext=False, textsimilarity = False):
+def substringFilter(inputstring, histogram = False, stringintitle = False, inputtime = 'months', normalised=False, writetext=False, docsimilarity = False, wordclusters = False):
 	querystring = inputstring.lower()
 
 	print('Connecting to database')
-	conn = sqlite3.connect("../4plebs_pol_18_03_2018.db")
+	conn = sqlite3.connect("../4plebs_pol_test_database.db")
 
 	print('Beginning SQL query for "' + querystring + '"')
-	if subject == False:
-		df = pd.read_sql_query("SELECT timestamp, comment FROM poldatabase_18_03_2018 WHERE lower(comment) LIKE ?;", conn, params=['%' + querystring + '%'])
+	if stringintitle == False:
+		df = pd.read_sql_query("SELECT timestamp, comment FROM poldatabase WHERE lower(comment) LIKE ?;", conn, params=['%' + querystring + '%'])
 	else:
-		df = pd.read_sql_query("SELECT timestamp, title FROM poldatabase_18_03_2018 WHERE lower(title) LIKE ?;", conn, params=['%' + querystring + '%'])
+		df = pd.read_sql_query("SELECT timestamp, title FROM poldatabase WHERE lower(title) LIKE ?;", conn, params=['%' + querystring + '%'])
+
+	# FOR DEBUGGING PURPOSES:
+	#df = pd.read_csv('substring_mentions/mentions_alt-left.csv')
 
 	print('Writing results to csv')
 	if '/' in querystring:
@@ -45,15 +56,21 @@ def substringFilter(inputstring, histogram = False, subject = False, inputtime =
 		df_parsed = pd.DataFrame(columns=['comments','time'])
 		df_parsed['comments'] = df['comment']
 		#note: make day seperable later
-		df_parsed['time'] = [datetime.strftime(datetime.fromtimestamp(i), "%m-%Y") for i in df['timestamp']]
-		df_parsed['comments'] = [re.sub(r'>', '', z) for z in df_parsed['comments']]
+		if inputtime == 'months':
+			df_parsed['time'] = [datetime.strftime(datetime.fromtimestamp(i), "%m-%Y") for i in df['timestamp']]
+		elif inputtime == 'weeks':
+			df_parsed['time'] = [datetime.strftime(datetime.fromtimestamp(i), "%Y") + '-' + str((datetime.fromtimestamp(i).isocalendar()[1])) for i in df['timestamp']]
+		elif inputtime == 'days':
+			df_parsed['time'] = [datetime.strftime(datetime.fromtimestamp(i), "%d-%m-%Y") for i in df['timestamp']]
+		df_parsed['comments'] = [re.sub(r'>', ' ', z) for z in df_parsed['comments']]
 		
 		print(df_parsed['comments'])
+
 		#write text file for separate months
 		currenttime = df_parsed['time'][1]
 		oldindex = 1
 
-		li_keystrings = []
+		li_str_timeseparated = []
 		li_stringdates = []
 		#create text files for each month
 		for index, distincttime in enumerate(df_parsed['time']):
@@ -63,34 +80,13 @@ def substringFilter(inputstring, histogram = False, subject = False, inputtime =
 				df_sliced = df_parsed[oldindex:index]
 				print(df_sliced)
 				string = writeToText(df_sliced, querystring, currenttime)
-				li_keystrings.append(string)
+				li_str_timeseparated.append(string)
 				oldindex = index + 1
 				li_stringdates.append(currenttime)
 				currenttime = distincttime				
 
-	# FOR DEBUGGING PURPOSES:
-	#df = pd.read_csv('substring_mentions/mentions_alt-left.csv')
-	
-	if textsimilarity == True:
-		#do some cleanup: only alphabetic characters, no stopwords
-		for string in li_keystrings:
-			regex = re.compile('[^a-zA-Z]')
-			regex.sub('', string)
-			wordlist = re.sub("[^\w]", " ", string).split()
-			wordlist = [word for word in wordlist if word not in set(stopwords.words('english'))]
-			string = ' '.join(wordlist)
-			#print(string)
-		
-		print('Calculating cosine differences')
-		vect = TfidfVectorizer(min_df=1)
-		tfidf = vect.fit_transform(li_keystrings)
-		similarityvector = (tfidf * tfidf.T).A
-		print(similarityvector)
-		print(type(similarityvector))
-
-		print('Writing similarity vector to csv')
-		df_similarity = pd.DataFrame(similarityvector, index=li_stringdates, columns=li_stringdates)
-		df_similarity.to_csv('substring_mentions/tfidf_' + querystring + '.csv')
+	if docsimilarity == True:
+		calculateDocSimilarity.kmeansDocSimilarity(li_str_timeseparated, li_stringdates, querystring)
 
 	if histogram == True:
 		createHistogram(df, querystring, inputtime, normalised)
@@ -290,8 +286,8 @@ def plotNewGraph(df, query):
 	plt.savefig('../visualisations/substring_counts/' + query + '.svg', dpi='figure')
 	plt.savefig('../visualisations/substring_counts/' + query + '.jpg', dpi='figure')
 
-li_querywords = ['kek']
+li_querywords = ['gaming','putin','clinton','obama']
 
 for word in li_querywords:
-	result = substringFilter(word, histogram = True, subject=False, inputtime='months', normalised=True, writetext=False, textsimilarity = False)	#returns tuple with df and input string
+	result = substringFilter(word, histogram = False, stringintitle = False, inputtime='days', normalised=True, writetext=True, docsimilarity = True, wordclusters = False)	#returns tuple with df and input string
 print('finished')
