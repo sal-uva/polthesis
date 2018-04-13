@@ -142,7 +142,7 @@ def createHisto(dictionary, querystring):
 	# df.rename(columns={'': 'A'}, inplace=True)
 	# print(df.iloc[0])
 	print(li_timelabels[2:])
-	ax = df.plot(kind='bar', stacked=True, grid=True, width=.9)
+	ax = df.plot(kind='bar', stacked=True, grid=True, width=.9, figsize=(14,10))
 	ax.set_ylim(bottom=0)
 	ax.set_ylabel('Amount of URL occurances')
 	ax.set_xticklabels(li_timelabels)
@@ -158,7 +158,7 @@ def createHisto(dictionary, querystring):
 	# plt.show()
 
 	plt.savefig('../visualisations/urls/urls_histo_' + querystring + '.svg')
-	plt.savefig('../visualisations/urls/urls_histo_' + queryatring + '.jpg')
+	plt.savefig('../visualisations/urls/urls_histo_' + querystring + '.jpg')
 
 	# fig = plt.figure(figsize=(12, 8))
 	# fig.set_dpi(100)

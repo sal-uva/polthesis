@@ -29,7 +29,7 @@ def substringFilter(inputstring, histogram = False, subject = False, inputtime =
 	conn = sqlite3.connect("../4plebs_pol_18_03_2018.db")
 
 	print('Beginning SQL query for "' + querystring + '"')
-	if subject = False:
+	if subject == False:
 		df = pd.read_sql_query("SELECT timestamp, comment FROM poldatabase_18_03_2018 WHERE lower(comment) LIKE ?;", conn, params=['%' + querystring + '%'])
 	else:
 		df = pd.read_sql_query("SELECT timestamp, title FROM poldatabase_18_03_2018 WHERE lower(title) LIKE ?;", conn, params=['%' + querystring + '%'])
@@ -191,8 +191,8 @@ def createHistogram(inputdf, querystring, inputtimeformat, normalised):
 	li_counts = []
 	#print(ax.xaxis.get_ticklabels())
 	li_axisticks = ax.xaxis.get_majorticklabels()
-	li_axisticks = li_axisticks[:-1]
-	li_axisticks = li_axisticks[1:]
+	li_axisticks = li_axisticks[:-2]
+	li_axisticks = li_axisticks[2:]
 	#print(li_axisticks)
 	li_matchticks = []
 	for text in li_axisticks:
@@ -288,12 +288,12 @@ def plotNewGraph(df, query):
 	ax1.set_ylabel('Absolute amount', color='#52b6dd')
 	ax2.set_ylabel('Percentage of total comments', color='#d12d04')
 	ax2.set_ylim(bottom=0)
-	plt.title('Amount of 4chan/pol/ comments containing "' + query + '"')
+	plt.title('Amount of 4chan/pol/ comments containing "' + query + '" and having the "NL"-countryflag')
 
 	plt.savefig('../visualisations/substring_counts/' + query + '.svg', dpi='figure')
 	plt.savefig('../visualisations/substring_counts/' + query + '.jpg', dpi='figure')
 
-li_querywords = ['/sg/','/ibs/']
+li_querywords = ['kek']
 
 for word in li_querywords:
 	result = substringFilter(word, histogram = True, subject=False, inputtime='months', normalised=True, writetext=False, textsimilarity = False)	#returns tuple with df and input string
