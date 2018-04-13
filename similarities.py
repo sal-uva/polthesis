@@ -7,7 +7,6 @@ import matplotlib.pyplot as plt
 import time
 import re
 import os
-import calculateDocSimilarity
 import nltk
 from matplotlib.font_manager import FontProperties
 from nltk.stem.snowball import SnowballStemmer
@@ -20,29 +19,41 @@ from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.cluster import KMeans
 from sklearn.externals import joblib
 from sklearn.manifold import MDS
+from sklearn.decomposition import PCA
+from gensim.models import Word2Vec
+from matplotlib import pyplot
 
-
-def kmeansDocSimilarity(li_strings, dates, querystring):
+def getTokens(li_strings, dates, similaritytype):
 	print('imported')
 	#do some cleanup: only alphabetic characters, no stopwords
 	# create separate stemmed tokens, to which the full strings will be compared to:
-	li_stringdates = dates
-	li_str_timeseparated = li_strings
-	
+	dates = dates	
 	li_stemmed = []
-
+	print(len(li_strings))
 	print('Creating list of tokens per monthly document')
-	for index, string in enumerate(li_str_timeseparated):
-		words_stemmed = tokeniserAndStemmer(string)
-		li_stemmed.extend(words_stemmed)
-		print('Stemming and tokenising finished for ' + li_stringdates[index])
-	print(len(li_stemmed))
+	for index, string in enumerate(li_strings):
+		
+		# if docs, work with a list, if words, work with a list of list
+		if similaritytype == 'words':
+			for comment in string:
 
+				words_stemmed = tokeniserAndStemmer(comment)
+				#print(comment)
+				li_stemmed.append(words_stemmed)
+			#print(li_stemmed)
+		elif similaritytype == 'docs':
+			words_stemmed = tokeniserAndStemmer(string)
+			li_stemmed.extend(words_stemmed)
+		print('Stemming and tokenising finished for ' + dates[index])
+	print(len(li_stemmed))
+	return li_stemmed
+
+def getDocSimilarity(li_strings, words_stemmed, dates, querystring):
 	print('Creating tf-idf vector of input documents')
 	#prepare vectorizer
 	tfidf_vectorizer = TfidfVectorizer(max_df = 0.9, min_df = 0.1, stop_words='english', analyzer='word', use_idf=True, tokenizer=tokeniserAndStemmer)
 	#create tf_idf vectors of month-separated comments
-	tfidf_matrix = tfidf_vectorizer.fit_transform(li_str_timeseparated)
+	tfidf_matrix = tfidf_vectorizer.fit_transform(li_strings)
 	print(tfidf_matrix)
 
 	# cosine similarity used before:
@@ -51,7 +62,7 @@ def kmeansDocSimilarity(li_strings, dates, querystring):
 	# print(type(similarityvector))
 
 	# print('Writing similarity vector to csv')
-	# df_similarity = pd.DataFrame(similarityvector, index=li_stringdates, columns=li_stringdates)
+	# df_similarity = pd.DataFrame(similarityvector, index=dates, columns=dates)
 	# df_similarity.to_csv('substring_mentions/tfidf_' + querystring + '.csv')
 
 	print('Calculating document similarities')
@@ -63,7 +74,7 @@ def kmeansDocSimilarity(li_strings, dates, querystring):
 	num_clusters = 7
 
 	# create new K-means clusters
-	k_means = KMeans(n_clusters=num_clusters)
+	k_means = KMeans(n_clusters = num_clusters)
 	k_means.fit(tfidf_matrix)
 	clusters = k_means.labels_.tolist()
 	print(clusters)
@@ -72,7 +83,7 @@ def kmeansDocSimilarity(li_strings, dates, querystring):
 	# loading existing clusters for debugging/testing
 	# k_means = joblib.load('doc_cluster.pkl')
 	# clusters = k_means.labels_.tolist()
-	di_clusters = {'dates': li_stringdates, 'text': li_str_timeseparated, 'cluster': clusters}
+	di_clusters = {'dates': dates, 'text': li_strings, 'cluster': clusters}
 
 	df_kclusters = pd.DataFrame(di_clusters, index=[clusters], columns = ['dates', 'cluster'])
 	df_kclusters.to_csv('cluster_test.csv')
@@ -106,7 +117,7 @@ def kmeansDocSimilarity(li_strings, dates, querystring):
 	print()
 
 	#create data frame that has the result of the MDS plus the cluster numbers and titles
-	df_plot = pd.DataFrame(dict(x=xs, y=ys, label=clusters, title=li_stringdates)) 
+	df_plot = pd.DataFrame(dict(x=xs, y=ys, label=clusters, title=dates)) 
 
 	#group by cluster
 	groups = df_plot.groupby('label')
@@ -155,6 +166,23 @@ def kmeansDocSimilarity(li_strings, dates, querystring):
 	#uncomment the below to save the plot if need be
 	plt.savefig('clusters_small_noaxes.png', dpi=200)
 
+def getWordSimilarity(sentences):
+	print('nothing yet')
+	# train model
+	model = Word2Vec(sentences, min_count=10)
+	# fit a 2d PCA model to the vectors
+	X = model[model.wv.vocab]
+	pca = PCA(n_components=10)
+	result = pca.fit_transform(X)
+	# create a scatter plot of the projection
+
+	pyplot.scatter(result[:, 0], result[:, 1])
+	words = list(model.wv.vocab)
+	for i, word in enumerate(words):
+		pyplot.annotate(word, xy=(result[i, 0], result[i, 1]))
+	plt.rcParams.update({'font.size': 8})
+	pyplot.show()
+
 def tokeniserAndStemmer(string):
 	stemmer = SnowballStemmer("english")
 	tokens = [word for sent in nltk.sent_tokenize(string) for word in nltk.word_tokenize(sent)]
@@ -162,7 +190,8 @@ def tokeniserAndStemmer(string):
 	# filter out any tokens not containing letters (e.g., numeric tokens, raw punctuation)
 	for token in tokens:
 		if re.search('[a-zA-Z]', token):
-			if len(token) < 30:			#will get rid of URLs
-				li_filtered_tokens.append(token)
+			if token not in stopwords.words('english'):
+				if len(token) < 30:			#will get rid of URLs
+					li_filtered_tokens.append(token)
 	stems = [stemmer.stem(t) for t in li_filtered_tokens]
 	return stems

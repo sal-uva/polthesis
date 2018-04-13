@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import time
 import re
 import os
-import calculateDocSimilarity
+import similarities
 import nltk
 from nltk.stem.snowball import SnowballStemmer
 from nltk.corpus import stopwords
@@ -30,7 +30,7 @@ from sklearn.manifold import MDS
 # test db: 4plebs_pol_test_database
 # test table: poldatabase
 
-def substringFilter(inputstring, histogram = False, stringintitle = False, inputtime = 'months', normalised=False, writetext=False, docsimilarity = False, wordclusters = False):
+def substringFilter(inputstring, histogram = False, stringintitle = False, inputtime = 'months', normalised=False, writetext=False, docsimilarity = False, wordclusters = False, similaritytype=None):
 	querystring = inputstring.lower()
 
 	print('Connecting to database')
@@ -71,6 +71,7 @@ def substringFilter(inputstring, histogram = False, stringintitle = False, input
 		oldindex = 1
 
 		li_str_timeseparated = []
+		li_str_full = []
 		li_stringdates = []
 		#create text files for each month
 		for index, distincttime in enumerate(df_parsed['time']):
@@ -79,14 +80,22 @@ def substringFilter(inputstring, histogram = False, stringintitle = False, input
 				
 				df_sliced = df_parsed[oldindex:index]
 				print(df_sliced)
-				string = writeToText(df_sliced, querystring, currenttime)
+				
+				string, li_strings = writeToText(df_sliced, querystring, currenttime)
 				li_str_timeseparated.append(string)
-				oldindex = index + 1
+				li_str_full.append(li_strings)
 				li_stringdates.append(currenttime)
+				oldindex = index + 1
 				currenttime = distincttime				
 
-	if docsimilarity == True:
-		calculateDocSimilarity.kmeansDocSimilarity(li_str_timeseparated, li_stringdates, querystring)
+	if similaritytype == 'docs' or similaritytype == 'words':
+		if similaritytype == 'docs':
+			words_stemmed = similarities.getTokens(li_str_timeseparated, li_stringdates,  similaritytype)
+			similarities.getDocSimilarity(li_str_timeseparated, words_stemmed, li_stringdates, querystring)
+		elif similaritytype == 'words':
+			words_stemmed = similarities.getTokens(li_str_full, li_stringdates,  similaritytype)
+			#print(words_stemmed)
+			similarities.getWordSimilarity(words_stemmed)
 
 	if histogram == True:
 		createHistogram(df, querystring, inputtime, normalised)
@@ -94,13 +103,15 @@ def substringFilter(inputstring, histogram = False, stringintitle = False, input
 def writeToText(inputdf, querystring, currenttime):
 	txtfile = open('substring_mentions/longstring_' + querystring + '_' + currenttime + '.txt', 'w', encoding='utf-8')
 	str_keyword = ''
+	li_str = []
 	for item in inputdf['comments']:
 		item = item.lower()
 		regex = re.compile("[^a-zA-Z \.\n]")		#excludes numbers, might have to revise this
 		item = regex.sub("", item)
 		txtfile.write("%s" % item)
 		str_keyword = str_keyword + item
-	return str_keyword
+		li_str.append(item)
+	return str_keyword, li_str
 
 def createHistogram(inputdf, querystring, inputtimeformat, normalised):
 	df = inputdf
@@ -286,8 +297,8 @@ def plotNewGraph(df, query):
 	plt.savefig('../visualisations/substring_counts/' + query + '.svg', dpi='figure')
 	plt.savefig('../visualisations/substring_counts/' + query + '.jpg', dpi='figure')
 
-li_querywords = ['gaming','putin','clinton','obama']
+li_querywords = ['putin']
 
 for word in li_querywords:
-	result = substringFilter(word, histogram = False, stringintitle = False, inputtime='days', normalised=True, writetext=True, docsimilarity = True, wordclusters = False)	#returns tuple with df and input string
+	result = substringFilter(word, histogram = False, stringintitle = False, inputtime='days', normalised=True, writetext=True, similaritytype='words')	#returns tuple with df and input string
 print('finished')
