@@ -187,13 +187,10 @@ def createHistogram(inputdf, querystring, inputtimeformat, normalised):
 		li_matchticks.append(strtext)
 	print(len(li_matchticks))
 	print('matching months: ' + str(li_matchticks))
+
 	#print('histo data:')
 	#print(histo)
-	#print('histo len: ' + str(len(histo[0])))
-	#print(len(li_matchticks))
-	#print(li_matchticks)
-	#print(newli_timeticks)
-	#print(histo[0])
+
 	#loop over each month
 	histoindex = 0
 	for month in range(53):
