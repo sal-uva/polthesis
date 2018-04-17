@@ -23,28 +23,31 @@ from sklearn.decomposition import PCA
 from gensim.models import Word2Vec
 from matplotlib import pyplot
 
-def getTokens(li_strings, dates, similaritytype):
+def getTokens(li_strings='', dates=None, similaritytype='docs', stems=False):
 	print('imported')
 	#do some cleanup: only alphabetic characters, no stopwords
 	# create separate stemmed tokens, to which the full strings will be compared to:
-	dates = dates	
 	li_stemmed = []
+	len_comments = len(li_strings)
 	print(len(li_strings))
 	print('Creating list of tokens per monthly document')
 	for index, string in enumerate(li_strings):
-		
+		#print(string)
 		# if docs, work with a list, if words, work with a list of list
 		if similaritytype == 'words':
+			sent_stemmed = []
+			string = string.split()
 			for comment in string:
-
-				words_stemmed = tokeniserAndStemmer(comment)
+				if len(comment) < 25: #gets rid of urls
+					word_stemmed = tokeniserAndStemmer(comment)
+					sent_stemmed.append(word_stemmed)
 				#print(comment)
-				li_stemmed.append(words_stemmed)
+			li_stemmed.append(word_stemmed)
 			#print(li_stemmed)
 		elif similaritytype == 'docs':
-			words_stemmed = tokeniserAndStemmer(string)
+			words_stemmed = tokeniserAndStemmer(string, stems=stems)
 			li_stemmed.extend(words_stemmed)
-		print('Stemming and tokenising finished for ' + dates[index])
+		print('Stemming/tokenising finished for string ' + str(index) + '/' + str(len_comments))
 	print(len(li_stemmed))
 	return li_stemmed
 
@@ -88,8 +91,6 @@ def getDocSimilarity(li_strings, words_stemmed, dates, querystring):
 	df_kclusters = pd.DataFrame(di_clusters, index=[clusters], columns = ['dates', 'cluster'])
 	df_kclusters.to_csv('clusters/cluster_'+ querystring + '.csv')
 
-	print("Top terms per cluster:")
-	print()
 	#sort cluster centers by proximity to centroid
 	order_centroids = k_means.cluster_centers_.argsort()[:, ::-1] 
 
@@ -166,10 +167,19 @@ def getDocSimilarity(li_strings, words_stemmed, dates, querystring):
 	#uncomment the below to save the plot if need be
 	plt.savefig('clusters_small_noaxes.png', dpi=200)
 
-def getWordSimilarity(sentences):
-	print('nothing yet')
+def getWordSimilarity(sentences, querystring=''):
 	# train model
 	model = Word2Vec(sentences, min_count=10)
+	similars = model.most_similar(positive=['trump'], topn = 3)
+
+	# pickle the entire model to disk, so we can load&resume training later
+	model.save('/word2vec/w2v_model_' + querystring + '.model')
+	# store the learned weights, in a format the original C tool understands
+	model.save_word2vec_format('/word2vec/w2v_model_' + querystring + '.model.bin', binary=True)
+	# or, import word weights created by the (faster) C word2vec
+	# this way, you can switch between the C/Python toolkits easily
+	#model = word2vec.Word2Vec.load_word2vec_format('/tmp/vectors.bin', binary=True)
+
 	# fit a 2d PCA model to the vectors
 	X = model[model.wv.vocab]
 	pca = PCA(n_components=10)
@@ -179,19 +189,34 @@ def getWordSimilarity(sentences):
 	pyplot.scatter(result[:, 0], result[:, 1])
 	words = list(model.wv.vocab)
 	for i, word in enumerate(words):
-		pyplot.annotate(word, xy=(result[i, 0], result[i, 1]))
-	plt.rcParams.update({'font.size': 8})
+		pyplot.annotate(word, xy=(result[i, 0], result[i, 1]), size=8)
+	plt.rcParams.update({'font.size': 4})
 	pyplot.show()
 
-def tokeniserAndStemmer(string):
+def tokeniserAndStemmer(string, stems=False):
 	stemmer = SnowballStemmer("english")
 	tokens = [word for sent in nltk.sent_tokenize(string) for word in nltk.word_tokenize(sent)]
 	li_filtered_tokens = []
 	# filter out any tokens not containing letters (e.g., numeric tokens, raw punctuation)
 	for token in tokens:
 		if re.search('[a-zA-Z]', token):
-			if token not in stopwords.words('english'):
-				if len(token) < 30:			#will get rid of URLs
-					li_filtered_tokens.append(token)
-	stems = [stemmer.stem(t) for t in li_filtered_tokens]
-	return stems
+			if token not in stopwords.words('english') and token != 'http' and token != '//blog.dilbert.com':
+				token = token.lower()
+				li_filtered_tokens.append(token)
+	if stems:
+		stems = [stemmer.stem(t) for t in li_filtered_tokens]
+		return stems
+	else:
+		return li_filtered_tokens
+
+# some calls for these function come from substring
+df = pd.read_csv('substring_mentions/trump_01-2016.csv', encoding='utf-8')
+newdf = pd.read_csv('substring_mentions/trump_02-2016.csv', encoding='utf-8')
+df = df.append(newdf, ignore_index=True)
+newdf = pd.read_csv('substring_mentions/trump_03-2016.csv', encoding='utf-8')
+df = df.append(newdf, ignore_index=True)
+li_strings = []
+for comment in df['comments']:
+	li_strings.append(comment)
+words_stemmed = getTokens(li_strings, similaritytype='words', stems=True)
+getWordSimilarity(words_stemmed, querystring='trump')
