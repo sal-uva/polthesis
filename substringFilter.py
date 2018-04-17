@@ -34,13 +34,13 @@ def substringFilter(inputstring, histogram = False, stringintitle = False, input
 	querystring = inputstring.lower()
 
 	print('Connecting to database')
-	conn = sqlite3.connect("../4plebs_pol_test_database.db")
+	conn = sqlite3.connect("../4plebs_pol_18_03_2018.db")
 
 	print('Beginning SQL query for "' + querystring + '"')
 	if stringintitle == False:
-		df = pd.read_sql_query("SELECT timestamp, comment FROM poldatabase WHERE lower(comment) LIKE ?;", conn, params=['%' + querystring + '%'])
+		df = pd.read_sql_query("SELECT timestamp, comment FROM poldatabase_18_03_2018 WHERE lower(comment) LIKE ?;", conn, params=['%' + querystring + '%'])
 	else:
-		df = pd.read_sql_query("SELECT timestamp, title FROM poldatabase WHERE lower(title) LIKE ?;", conn, params=['%' + querystring + '%'])
+		df = pd.read_sql_query("SELECT timestamp, title FROM poldatabase_18_03_2018 WHERE lower(title) LIKE ?;", conn, params=['%' + querystring + '%'])
 
 	# FOR DEBUGGING PURPOSES:
 	#df = pd.read_csv('substring_mentions/mentions_alt-left.csv')
@@ -297,8 +297,8 @@ def plotNewGraph(df, query):
 	plt.savefig('../visualisations/substring_counts/' + query + '.svg', dpi='figure')
 	plt.savefig('../visualisations/substring_counts/' + query + '.jpg', dpi='figure')
 
-li_querywords = ['putin']
+li_querywords = ['trump']
 
 for word in li_querywords:
-	result = substringFilter(word, histogram = False, stringintitle = False, inputtime='days', normalised=True, writetext=True, similaritytype='words')	#returns tuple with df and input string
+	result = substringFilter(word, histogram = False, stringintitle = False, inputtime='weeks', normalised=True, writetext=True, similaritytype='docs')	#returns tuple with df and input string
 print('finished')

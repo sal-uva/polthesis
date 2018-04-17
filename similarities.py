@@ -78,7 +78,7 @@ def getDocSimilarity(li_strings, words_stemmed, dates, querystring):
 	k_means.fit(tfidf_matrix)
 	clusters = k_means.labels_.tolist()
 	print(clusters)
-	joblib.dump(k_means,  'doc_cluster_' + querystring + '.pkl')
+	joblib.dump(k_means,  'clusters/doc_cluster_' + querystring + '.pkl')
 
 	# loading existing clusters for debugging/testing
 	# k_means = joblib.load('doc_cluster.pkl')
@@ -86,7 +86,7 @@ def getDocSimilarity(li_strings, words_stemmed, dates, querystring):
 	di_clusters = {'dates': dates, 'text': li_strings, 'cluster': clusters}
 
 	df_kclusters = pd.DataFrame(di_clusters, index=[clusters], columns = ['dates', 'cluster'])
-	df_kclusters.to_csv('cluster_test.csv')
+	df_kclusters.to_csv('clusters/cluster_'+ querystring + '.csv')
 
 	print("Top terms per cluster:")
 	print()
