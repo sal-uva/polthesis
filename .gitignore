@@ -3,3 +3,5 @@
 *.txt
 *.pkl
 *.pyc
+*.bin
+*.model

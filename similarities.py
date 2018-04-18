@@ -36,14 +36,15 @@ def getTokens(li_strings='', dates=None, similaritytype='docs', stems=False):
 		# if docs, work with a list, if words, work with a list of list
 		if similaritytype == 'words':
 			sent_stemmed = []
-			string = string.split()
-			for comment in string:
-				if len(comment) < 25: #gets rid of urls
-					word_stemmed = tokeniserAndStemmer(comment)
-					sent_stemmed.append(word_stemmed)
-				#print(comment)
-			li_stemmed.append(word_stemmed)
-			#print(li_stemmed)
+			if isinstance(string, str):
+				string = string.split()
+				for comment in string:
+					if len(comment) < 25 and len(comment) > 2: #gets rid of urls
+						word_stemmed = tokeniserAndStemmer(comment)
+						sent_stemmed.append(word_stemmed)
+					#print(comment)
+				li_stemmed.append(word_stemmed)
+				#print(li_stemmed)
 		elif similaritytype == 'docs':
 			words_stemmed = tokeniserAndStemmer(string, stems=stems)
 			li_stemmed.extend(words_stemmed)
@@ -167,19 +168,22 @@ def getDocSimilarity(li_strings, words_stemmed, dates, querystring):
 	#uncomment the below to save the plot if need be
 	plt.savefig('clusters_small_noaxes.png', dpi=200)
 
-def getWordSimilarity(sentences, querystring=''):
-	# train model
-	model = Word2Vec(sentences, min_count=10)
-	similars = model.most_similar(positive=['trump'], topn = 3)
-
-	# pickle the entire model to disk, so we can load&resume training later
-	model.save('/word2vec/w2v_model_' + querystring + '.model')
-	# store the learned weights, in a format the original C tool understands
-	model.save_word2vec_format('/word2vec/w2v_model_' + querystring + '.model.bin', binary=True)
-	# or, import word weights created by the (faster) C word2vec
-	# this way, you can switch between the C/Python toolkits easily
-	#model = word2vec.Word2Vec.load_word2vec_format('/tmp/vectors.bin', binary=True)
-
+def getWord2VecModel(train='', load='', modelname=''):
+	if train != '':
+		# train model
+		model = Word2Vec(train, min_count=100)
+		# pickle the entire model to disk, so we can load&resume training later
+		model.save('word2vec/w2v_model_' + modelname + '.model')
+		#store the learned weights, in a format the original C tool understands
+		model.wv.save_word2vec_format('word2vec/w2v_model_' + modelname + '.model.bin', binary=True)
+		return model
+	elif load != '':
+		# or, import word weights created by the (faster) C word2vec
+		# this way, you can switch between the C/Python toolkits easily
+		model = Word2Vec.load(load)
+		return model
+	
+def showPCAGraph(model):
 	# fit a 2d PCA model to the vectors
 	X = model[model.wv.vocab]
 	pca = PCA(n_components=10)
@@ -189,11 +193,12 @@ def getWordSimilarity(sentences, querystring=''):
 	pyplot.scatter(result[:, 0], result[:, 1])
 	words = list(model.wv.vocab)
 	for i, word in enumerate(words):
-		pyplot.annotate(word, xy=(result[i, 0], result[i, 1]), size=8)
-	plt.rcParams.update({'font.size': 4})
+		pyplot.annotate(word, xy=(result[i, 0], result[i, 1]), size=6)
+	plt.rcParams.update({'font.size': 3})
 	pyplot.show()
 
-def tokeniserAndStemmer(string, stems=False):
+
+def tokeniserAndStemmer(string, stems=True):
 	stemmer = SnowballStemmer("english")
 	tokens = [word for sent in nltk.sent_tokenize(string) for word in nltk.word_tokenize(sent)]
 	li_filtered_tokens = []
@@ -210,13 +215,22 @@ def tokeniserAndStemmer(string, stems=False):
 		return li_filtered_tokens
 
 # some calls for these function come from substring
-df = pd.read_csv('substring_mentions/trump_01-2016.csv', encoding='utf-8')
-newdf = pd.read_csv('substring_mentions/trump_02-2016.csv', encoding='utf-8')
-df = df.append(newdf, ignore_index=True)
-newdf = pd.read_csv('substring_mentions/trump_03-2016.csv', encoding='utf-8')
-df = df.append(newdf, ignore_index=True)
-li_strings = []
-for comment in df['comments']:
-	li_strings.append(comment)
-words_stemmed = getTokens(li_strings, similaritytype='words', stems=True)
-getWordSimilarity(words_stemmed, querystring='trump')
+def getSimilaritiesFromCsv(csvdoc, modelname = ''):
+	df = pd.read_csv(csvdoc, encoding='utf-8')
+	li_strings = []
+	for comment in df['comment']:
+		li_strings.append(comment)
+	words_stemmed = getTokens(li_strings, similaritytype='words', stems=True)
+	print(words_stemmed[:100])
+	df_stemmedwords = pd.DataFrame(words_stemmed)
+	df_stemmedwords.to_csv('test_stemmed.csv', encoding='utf-8')
+
+	model = getWord2VecModel(train=words_stemmed, modelname=modelname)
+	# model = getWord2VecModel(load='word2vec/w2v_model_all.model')
+	#showPCAGraph(model)
+	# similars = model.most_similar(positive=['nigger'], topn = 20)
+	# print(similars)
+	# similars = model.similar_by_vector(model['kek'] + model['trump'])
+	# print(similars)
+
+#getSimilaritiesFromCsv('substring_mentions/all_01-2016.csv', modelname='all-01-2016')
