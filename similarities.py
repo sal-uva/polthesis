@@ -27,30 +27,26 @@ def getTokens(li_strings='', dates=None, similaritytype='docs', stems=False):
 	print('imported')
 	#do some cleanup: only alphabetic characters, no stopwords
 	# create separate stemmed tokens, to which the full strings will be compared to:
-	li_stemmed = []
+	li_comments_stemmed = []
 	len_comments = len(li_strings)
 	print(len(li_strings))
 	print('Creating list of tokens per monthly document')
-	for index, string in enumerate(li_strings):
-		#print(string)
+	for index, comment in enumerate(li_strings):
+		#print(comment)
 		# if docs, work with a list, if words, work with a list of list
 		if similaritytype == 'words':
-			sent_stemmed = []
-			if isinstance(string, str):
-				string = string.split()
-				for comment in string:
-					if len(comment) < 25 and len(comment) > 2: #gets rid of urls
-						word_stemmed = tokeniserAndStemmer(comment)
-						sent_stemmed.append(word_stemmed)
-					#print(comment)
-				li_stemmed.append(word_stemmed)
+			if isinstance(comment, str):
+				li_comment_stemmed = []
+				li_comment_stemmed = tokeniserAndStemmer(comment)
+				li_comments_stemmed.append(li_comment_stemmed)
 				#print(li_stemmed)
 		elif similaritytype == 'docs':
-			words_stemmed = tokeniserAndStemmer(string, stems=stems)
+			words_stemmed = tokeniserAndStemmer(string, steming=stems)
 			li_stemmed.extend(words_stemmed)
-		print('Stemming/tokenising finished for string ' + str(index) + '/' + str(len_comments))
-	print(len(li_stemmed))
-	return li_stemmed
+		if index % 1000 == 0:
+			print('Stemming/tokenising finished for string ' + str(index) + '/' + str(len_comments))
+	print(len(li_comments_stemmed))
+	return li_comments_stemmed
 
 def getDocSimilarity(li_strings, words_stemmed, dates, querystring):
 	print('Creating tf-idf vector of input documents')
@@ -171,7 +167,7 @@ def getDocSimilarity(li_strings, words_stemmed, dates, querystring):
 def getWord2VecModel(train='', load='', modelname=''):
 	if train != '':
 		# train model
-		model = Word2Vec(train, min_count=100)
+		model = Word2Vec(train, min_count=2)
 		# pickle the entire model to disk, so we can load&resume training later
 		model.save('word2vec/w2v_model_' + modelname + '.model')
 		#store the learned weights, in a format the original C tool understands
@@ -198,39 +194,42 @@ def showPCAGraph(model):
 	pyplot.show()
 
 
-def tokeniserAndStemmer(string, stems=True):
+def tokeniserAndStemmer(string, stemming=False):
 	stemmer = SnowballStemmer("english")
 	tokens = [word for sent in nltk.sent_tokenize(string) for word in nltk.word_tokenize(sent)]
 	li_filtered_tokens = []
 	# filter out any tokens not containing letters (e.g., numeric tokens, raw punctuation)
 	for token in tokens:
 		if re.search('[a-zA-Z]', token):
-			if token not in stopwords.words('english') and token != 'http' and token != '//blog.dilbert.com':
-				token = token.lower()
-				li_filtered_tokens.append(token)
-	if stems:
+			if len(token) > 2 and len(token) < 20:
+				if token not in stopwords.words('english'):
+					token = token.lower()
+					li_filtered_tokens.append(token)
+	if stemming == True:
 		stems = [stemmer.stem(t) for t in li_filtered_tokens]
 		return stems
 	else:
 		return li_filtered_tokens
 
 # some calls for these function come from substring
-def getSimilaritiesFromCsv(csvdoc, modelname = ''):
+def getSimilaritiesFromCsv(csvdoc='', modelname = ''):
 	df = pd.read_csv(csvdoc, encoding='utf-8')
 	li_strings = []
 	for comment in df['comment']:
 		li_strings.append(comment)
-	words_stemmed = getTokens(li_strings, similaritytype='words', stems=True)
-	print(words_stemmed[:100])
-	df_stemmedwords = pd.DataFrame(words_stemmed)
+	words_stemmed = getTokens(li_strings, similaritytype='words', stems=False)
+	#print(words_stemmed[:100])
+	#df_stemmedwords = pd.DataFrame(words_stemmed)
 	df_stemmedwords.to_csv('test_stemmed.csv', encoding='utf-8')
 
 	model = getWord2VecModel(train=words_stemmed, modelname=modelname)
-	# model = getWord2VecModel(load='word2vec/w2v_model_all.model')
+	# model = getWord2VecModel(load=modelname)
 	#showPCAGraph(model)
-	# similars = model.most_similar(positive=['nigger'], topn = 20)
+	# similars = model.most_similar(positive=['btfo'], topn = 20)
 	# print(similars)
-	# similars = model.similar_by_vector(model['kek'] + model['trump'])
+	# similars = model.similar_by_vector(model['hillari'] + model['polit'])
 	# print(similars)
+
+# getSimilaritiesFromCsv(modelname='word2vec/w2v_model_all-05-2015.model')
 
 #getSimilaritiesFromCsv('substring_mentions/all_01-2016.csv', modelname='all-01-2016')
