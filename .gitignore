@@ -5,3 +5,5 @@
 *.pyc
 *.bin
 *.model
+*.JPEG
+*.PNG
