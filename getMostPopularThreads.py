@@ -20,9 +20,9 @@ def getMostPopularThreads(timeframe='full', limit=25):
 	print('Beginning SQL query to get most popular threads')
 
 	limit = limit
-	headers = ['date','comments','timestamp','thread_num','op','title','comment']
+	headers = ['date','comments','sicky','timestamp','thread_num','op','title','comment']
 	if timeframe=='full':
-		df_timethreads = pd.read_sql_query("SELECT COUNT(*)comments, timestamp, thread_num, title, comment, MAX(op) AS op FROM poldatabase_18_03_2018 WHERE comment LIKE '%cuck%' GROUP BY thread_num ORDER BY comments DESC, op DESC LIMIT ?;", conn, params=[limit])
+		df_timethreads = pd.read_sql_query("SELECT COUNT(*)comments, sticky, timestamp, thread_num, title, comment, MAX(op) AS op FROM poldatabase_18_03_2018 WHERE comment LIKE '%cuck%' GROUP BY thread_num ORDER BY comments DESC, op DESC LIMIT ?;", conn, params=[limit])
 		li_dates = []
 		dateformat = '%Y-%m-%d-%H:%M:%S'
 		for timestamp in df_timethreads['timestamp']:

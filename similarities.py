@@ -50,6 +50,7 @@ def getTokens(li_strings='', dates=None, similaritytype='docs', stems=False):
 	return li_comments_stemmed
 
 def getDocSimilarity(li_strings, words_stemmed, dates, querystring):
+	# look up iterative k-means
 	print('Creating tf-idf vector of input documents')
 	#prepare vectorizer
 	tfidf_vectorizer = TfidfVectorizer(max_df = 0.9, min_df = 0.1, stop_words='english', analyzer='word', use_idf=True, tokenizer=tokeniserAndStemmer)
@@ -168,6 +169,7 @@ def getDocSimilarity(li_strings, words_stemmed, dates, querystring):
 def getWord2VecModel(train='', load='', modelname=''):
 	if train != '':
 		# train model
+		# neighbourhood?
 		model = Word2Vec(train, min_count=2)
 		# pickle the entire model to disk, so we can load&resume training later
 		model.save('word2vec/w2v_model_' + modelname + '.model')
@@ -181,6 +183,9 @@ def getWord2VecModel(train='', load='', modelname=''):
 		return model
 	
 def showPCAGraph(model):
+	# use t-sne!
+	# PCA is more effective for 'importance' of words
+
 	# fit a 2d PCA model to the vectors
 	X = model[model.wv.vocab]
 	pca = PCA(n_components=80)

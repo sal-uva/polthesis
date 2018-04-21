@@ -4,6 +4,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import operator
 import collections
+import numpy as np
 from datetime import datetime, timedelta
 from matplotlib.font_manager import FontProperties
 
@@ -17,24 +18,55 @@ from matplotlib.font_manager import FontProperties
 # full db: 4plebs_pol_18_03_2018
 # full table: poldatabase_18_03_2018
 
-def getTopURLs(piegraph = False, histo = False, threshold = 20, querystring = ''):
-	conn = sqlite3.connect("../4plebs_pol_18_03_2018.db")
+def getTopURLs(piegraph = False, histo = False, threshold = 20, querystring = '', title=False):
+	# conn = sqlite3.connect("../4plebs_pol_18_03_2018.db")
 
-	print('Running SQL query')
-	urlSQLquery = "SELECT comment, thread_num, timestamp FROM poldatabase_18_03_2018 WHERE (comment LIKE '%http://%' OR comment LIKE '%https://%' OR comment LIKE '%www.%') AND (lower(comment) LIKE ?);"
-	df = pd.read_sql_query(urlSQLquery, conn, params=['%' + querystring + '%'])
+	# print('Running SQL query')
+	# urlSQLquery = "SELECT comment, thread_num, timestamp FROM poldatabase_18_03_2018 WHERE (comment LIKE '%http://%' OR comment LIKE '%https://%' OR comment LIKE '%www.%') AND (lower(comment) LIKE ?);"
+	# df = pd.read_sql_query(urlSQLquery, conn, params=['%' + querystring + '%'])
 	
 	# FOR DEBUGGING PURPOSES:
-	#df = pd.read_csv('top_urls/urls_podesta.csv')
+	# df = pd.read_csv('../mentions_trump.csv')
 
-	print('Extracting URL regex from DataFrame')
-	df['url'] = df['comment'].str.extract('([\/\/|www\.][0-9a-z\.]*\.[0-9a-z\.]+)')
-	print(df['url'][:9])
+	# print('Extracting URL regex from DataFrame')
+	# df['url'] = df['comment'].str.extract('([\/\/|www\.][0-9a-z\.]*\.[0-9a-z\.]+)')
+	# df = df.dropna()
+	# print(df['url'][:9])
 
-	print('Writing csv')
-	if querystring == '':
-		querystring = 'full'
-	df.to_csv('top_urls/urls_' + querystring + '.csv')
+	# print('Writing csv')
+	# if querystring == '':
+	# 	querystring = 'full'
+	# df.to_csv('top_urls/urls_' + querystring + '.csv')
+
+	df = pd.read_csv('top_urls/urls_trump.csv')
+	print(df[:10])
+	if title == True:
+		df = df[df['title'].str.lower().str.contains('ptg', na=False)]
+	df = df.sort_values(by=['timestamp'])
+	# print(len(df))
+	# df = df[(df['timestamp'] > 1467331200) & (df['timestamp'] < 1470009599)]
+	#print(df)
+	print(len(df))
+
+	#do some editing of the timestings: remove www./m./youtu.be
+	print('editing URLs')
+	print(df['url'][:10])
+	for index, url in enumerate(df['url']):
+		# print(url)
+		# print(url[:5])
+		# quit()
+		i = 0
+		if url[:1] == '/':
+			i = 1
+			url = url[1:]
+		if url[:4] == 'www.':
+			url = url[4:]
+		elif url[:2] == 'm.':
+			url = url[2:]
+		if url == 'youtu.be':
+			url = 'youtube.com'
+		df.at[index,'url'] = url
+	print(df['url'][:10])
 
 	# make pie graph of all URLs
 	if piegraph == True:
@@ -54,8 +86,7 @@ def getTopURLs(piegraph = False, histo = False, threshold = 20, querystring = ''
 		plotthreshold = di_all_urls[most_used_url] / threshold
 
 		for key, value in di_all_urls.items():
-			formatted_url = str(key)[1:]
-			if '..' not in formatted_url:		#bugfix
+			if '..' not in url:		#bugfix
 				if value < plotthreshold: 		#if the URL is used 10 times or less than the most popular URL
 					di_pie_urls['other'] += 1
 				else:
@@ -75,10 +106,12 @@ def getTopURLs(piegraph = False, histo = False, threshold = 20, querystring = ''
 
 		#loop through months
 		for index, timestring in enumerate(df['time']):
+
 			#if the month is not yet registered, add it to the dict
 			if timestring not in di_separated_urls:
-				print('new month')
+				print('new month: ' + timestring)
 				di_separated_urls[timestring] = collections.OrderedDict()
+				print(index)
 				di_separated_urls[timestring][df['url'][index]] = 1
 			else:
 				#if the url is not yet registered
@@ -91,30 +124,28 @@ def getTopURLs(piegraph = False, histo = False, threshold = 20, querystring = ''
 
 		#print(di_separated_urls)
 
-		di_pie_urls = collections.OrderedDict()
+		di_bar_urls = collections.OrderedDict()
 		#loop through months
 		for month, urls in di_separated_urls.items(): 
-			di_pie_urls[month] = collections.OrderedDict()
+			di_bar_urls[month] = collections.OrderedDict()
 			#print(month)
 			most_used_url = max(urls.items(), key=operator.itemgetter(1))[0]
-			di_pie_urls[month]['other'] = 0
+			di_bar_urls[month]['other'] = 0
 
 			
 			print('Threshold: ' + str(threshold))
 
 			#loop through URLs of a month
 			for url, count in urls.items():
-				formatted_url = str(url)[1:]
-				#print(formatted_url)
-				if '..' not in formatted_url:		#regex workaround
+				if '..' not in url:		#regex workaround
 					if count < threshold: 		#if the URL is used 10 times or less than the most popular URL
-						di_pie_urls[month]['other'] += 1
+						di_bar_urls[month]['other'] += 1
 					else:
-						di_pie_urls[month][formatted_url] = count
+						di_bar_urls[month][url] = count
 
 		#print(di_pie_urls)
 		print('Plotting histo graph')
-		createHisto(di_pie_urls, querystring)
+		createHisto(di_bar_urls, querystring)
 
 def createPieGraph(dictionary, querystring):
 	di = dictionary
@@ -138,11 +169,22 @@ def createHisto(dictionary, querystring):
 	li_timelabels = list(di_totalcomment.keys())
 	
 	df = pd.DataFrame.from_dict(dictionary, orient='index')
-	#print(df.head())
+	df['timestamps'] = [(datetime.strptime(string, "%m-%Y")).timestamp() for string in df.index.values]
+	df = df.sort_values(by=['timestamps'])
+	df = df.set_index(df['timestamps'])
+	df = df.rename(columns={'timestamps': 'tsp'})
+	df = df.drop('tsp', 1)
+	print(df.head())
+	print(df[:10])
+
 	# df.rename(columns={'': 'A'}, inplace=True)
 	# print(df.iloc[0])
 	print(li_timelabels[2:])
-	ax = df.plot(kind='bar', stacked=True, grid=True, width=.9, figsize=(14,10))
+	#colormap = plt.cm.nipy_spectral
+	colormap = ["#ffa173", "#b44eff", "#50ff5e","#003cae","#c2ff26","#000e4c","#39ff94","#ff6dd5","#249200","#ffabee","#a7ac00","#005e98","#e8ff78","#18001d","#cc9000","#9eb5ff","#ab0013","#019f5d","#620500","#d7ffea","#044500","#ffccdc","#017a81","#ffa392"]
+#plt.cm.get_cmap('gist_ncar')
+	
+	ax = df.plot(kind='bar', stacked=True, grid=True, width=.9, figsize=(14,10), colors=colormap)
 	ax.set_ylim(bottom=0)
 	ax.set_ylabel('Amount of URL occurances')
 	ax.set_xticklabels(li_timelabels)
@@ -151,9 +193,12 @@ def createHisto(dictionary, querystring):
 	box = ax.get_position()
 	ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
 	# Put a legend to the right of the current axis
-	ax.legend(loc='center left', bbox_to_anchor=(1, 0.5), fancybox=True, shadow=True)
+	#ax.legend(loc='center left', bbox_to_anchor=(1, 0.5), fancybox=True, shadow=True)
+	handles, labels = ax.get_legend_handles_labels()
+	ax.legend(reversed(handles), reversed(labels), loc='center left', bbox_to_anchor=(1, 0.5), fancybox=True, shadow=True)  # reverse to keep order consistent
+
 	ax.grid(color='#e5e5e5',linestyle='dashed', linewidth=.6)
-	plt.title('Hyperlinks associated with "' + querystring + '", over time')
+	plt.title('Hyperlinks in comments with "' + querystring + '", over time')
 
 	# plt.show()
 
@@ -172,8 +217,7 @@ def createHisto(dictionary, querystring):
 	# ax.set_ylabel('Absolute amount', color='#52b6dd')
 	# plt.title('Amount of 4chan/pol/ comments containing "' + query + '"')
 
-li_queries=['trump','we must','vote','podesta','clinton']
+li_queries=['trump']
 
 for query in li_queries:
-	getTopURLs(piegraph=False, histo=True, threshold=200, querystring=query)
-
+	getTopURLs(piegraph=False, histo=True, threshold=300, querystring=query, title=False)
