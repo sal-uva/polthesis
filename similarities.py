@@ -8,6 +8,7 @@ import time
 import re
 import os
 import nltk
+import pickle
 from matplotlib.font_manager import FontProperties
 from nltk.stem.snowball import SnowballStemmer
 from nltk.corpus import stopwords
@@ -182,7 +183,7 @@ def getWord2VecModel(train='', load='', modelname=''):
 def showPCAGraph(model):
 	# fit a 2d PCA model to the vectors
 	X = model[model.wv.vocab]
-	pca = PCA(n_components=10)
+	pca = PCA(n_components=80)
 	result = pca.fit_transform(X)
 	# create a scatter plot of the projection
 
@@ -212,16 +213,16 @@ def tokeniserAndStemmer(string, stemming=False):
 		return li_filtered_tokens
 
 # some calls for these function come from substring
-def getSimilaritiesFromCsv(csvdoc='', modelname = ''):
-	df = pd.read_csv(csvdoc, encoding='utf-8')
+def getSimilaritiesFromCsv(df, modelname = ''):
+	#df = pd.read_csv(csvdoc, encoding='utf-8')
 	li_strings = []
 	for comment in df['comment']:
 		li_strings.append(comment)
 	words_stemmed = getTokens(li_strings, similaritytype='words', stems=False)
 	#print(words_stemmed[:100])
 	#df_stemmedwords = pd.DataFrame(words_stemmed)
-	df_stemmedwords.to_csv('test_stemmed.csv', encoding='utf-8')
 
+	pickle.dump(words_stemmed, open("word2vec/pickle_stems/pickle_" + modelname + ".p", "wb"))
 	model = getWord2VecModel(train=words_stemmed, modelname=modelname)
 	# model = getWord2VecModel(load=modelname)
 	#showPCAGraph(model)
@@ -230,6 +231,10 @@ def getSimilaritiesFromCsv(csvdoc='', modelname = ''):
 	# similars = model.similar_by_vector(model['hillari'] + model['polit'])
 	# print(similars)
 
-# getSimilaritiesFromCsv(modelname='word2vec/w2v_model_all-05-2015.model')
+# model = getWord2VecModel(load='word2vec/w2v_model_all-02-2016.model')
+# similars = model.most_similar(positive=['trump'], topn = 20)
+# print(similars)
+# similars = model.similar_by_vector(model['trump'] + model['fuck'])
+# print(similars)
 
 #getSimilaritiesFromCsv('substring_mentions/all_01-2016.csv', modelname='all-01-2016')
