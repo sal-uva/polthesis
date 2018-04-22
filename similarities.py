@@ -236,6 +236,7 @@ def getSimilaritiesFromCsv(df, modelname = ''):
 	# similars = model.similar_by_vector(model['hillari'] + model['polit'])
 	# print(similars)
 
+
 # model = getWord2VecModel(load='word2vec/w2v_model_all-02-2016.model')
 # similars = model.most_similar(positive=['trump'], topn = 20)
 # print(similars)

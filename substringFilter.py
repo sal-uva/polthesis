@@ -143,13 +143,17 @@ def writeToText(inputdf, querystring, currenttime):
 # individual monthly models:
 li_times = [(1443657600,1446335999),(1446336000,1448927999),(1448928000,1451606399),(1451606400,1454284799),(1454284800,1456790399)]
 
-df = pd.DataFrame()
-for tpl_time in li_times:
-	result = substringFilter(inputstring='all', mintime = tpl_time[0], maxtime = tpl_time[1], histogram = False, stringintitle = False, inputtime='months', normalised=True, writetext=False)	#returns tuple with df and input string
-	print('starting similarities')
-	datestring = datetime.strftime(datetime.fromtimestamp(tpl_time[0]), "%m-%Y")
-	# print(result)
-	# print(df)
-	# frames = [df, result]
-	# df = pd.concat(frames)
-	similarities.getSimilaritiesFromCsv(result, modelname='all-' + datestring)
+def doCode():
+	df = pd.DataFrame()
+	for tpl_time in li_times:
+		result = substringFilter(inputstring='all', mintime = tpl_time[0], maxtime = tpl_time[1], histogram = False, stringintitle = False, inputtime='months', normalised=True, writetext=False)	#returns tuple with df and input string
+		print('starting similarities')
+		datestring = datetime.strftime(datetime.fromtimestamp(tpl_time[0]), "%m-%Y")
+		# print(result)
+		# print(df)
+		# frames = [df, result]
+		# df = pd.concat(frames)
+		similarities.getSimilaritiesFromCsv(result, modelname='all-' + datestring)
+
+
+doCode()
