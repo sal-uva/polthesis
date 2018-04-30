@@ -48,7 +48,7 @@ def substringFilter(inputstring = 'all', histogram = False, mintime = 0, maxtime
 		df = pd.read_sql_query("SELECT timestamp, comment FROM poldatabase_18_03_2018 WHERE lower(comment) LIKE ?;", conn, params=['%' + querystring + '%'])
 	#look for sting in comment body (default)
 	else:
-		df = pd.read_sql_query("SELECT timestamp, title FROM poldatabase_18_03_2018 WHERE lower(title) LIKE ?;", conn, params=['%' + querystring + '%'])
+		df = pd.read_sql_query("SELECT timestamp, title, comment FROM poldatabase_18_03_2018 WHERE lower(title) LIKE ?;", conn, params=['%' + querystring + '%'])
 
 	print('Writing results to csv')
 	if '/' in querystring:
@@ -109,7 +109,7 @@ def substringFilter(inputstring = 'all', histogram = False, mintime = 0, maxtime
 				similarities.getWordSimilarity(words_stemmed)
 
 	if histogram == True:
-		createHistogram(df, querystring, inputtime, normalised)
+		createHistogram.createHistogram(df, querystring, inputtime, normalised)
 	df_return = pd.DataFrame()
 	df_return['comment'] = df['comment']
 	#print(df)
@@ -140,20 +140,20 @@ def writeToText(inputdf, querystring, currenttime):
 #used for model, oct 2015 t/m feb 2016:
 #li_times = [(1443657600,1446335999),(1446336000,1448927999),(1448928000,1451606399),(1451606400,1454284799),(1454284800,1456790399)]
 
+#done:
+#(1433116800,1435708799),(1435708800,1438387199),(1438387200,1441065599),(1441065600,1443657599),(1443657600,1446335999),(1446336000,1448927999),(1448928000,1451606399),(1451606400,1454284799),(1454284800,1456790399),(1456790400,1459468799),(1459468800,1462060799),(1462060800,1464739199),(1464739200,1467331199),(1467331200,1470009599),(1470009600,1472687999),(1472688000,1475279999)
+
 # individual monthly models:
-li_times = [(1443657600,1446335999),(1446336000,1448927999),(1448928000,1451606399),(1451606400,1454284799),(1454284800,1456790399)]
+li_times = [(1475280000,1477958399),(1477958400,1480550399),(1480550400,1483228799),(1483228800,1485907199),(1485907200,1488326399),(1488326400,1491004799),(1491004800,1493596799),(1493596800,1496275199),(1496275200,1498867199),(1498867200,1501545599),(1501545600,1504223999),(1504224000,1506815999),(1506816000,1509494399),(1509494400,1512086399),(1512086400,1514764799),(1514764800,1517443199),(1517443200,1519862399),(1519862400,1522540799),(1522540800,1525132799)]
 
 def doCode():
-	df = pd.DataFrame()
 	for tpl_time in li_times:
 		result = substringFilter(inputstring='all', mintime = tpl_time[0], maxtime = tpl_time[1], histogram = False, stringintitle = False, inputtime='months', normalised=True, writetext=False)	#returns tuple with df and input string
 		print('starting similarities')
 		datestring = datetime.strftime(datetime.fromtimestamp(tpl_time[0]), "%m-%Y")
-		# print(result)
-		# print(df)
-		# frames = [df, result]
-		# df = pd.concat(frames)
 		similarities.getSimilaritiesFromCsv(result, modelname='all-' + datestring)
 
-
+# substringFilter(inputstring='drumpf', histogram = True, stringintitle = False, inputtime='months', normalised=True, writetext=False)
+# substringFilter(inputstring='god emperor', histogram = True, stringintitle = False, inputtime='months', normalised=True, writetext=False)
+# substringFilter(inputstring='we must', histogram = True, stringintitle = False, inputtime='months', normalised=True, writetext=False)
 doCode()
