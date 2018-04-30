@@ -16,25 +16,44 @@ from PIL import Image
 # full db: 4plebs_pol_18_03_2018
 # full table: poldatabase_18_03_2018
 
-def getMostUsedImgs(querystring=None, stringintitle=False, downloadimg_thres=1000):
+user_agent = 'Mozilla/5.0 (Windows NT 6.1; Win64; x64)'
+headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11',
+   'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+   'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.3',
+   'Accept-Encoding': 'none',
+   'Accept-Language': 'en-US,en;q=0.8',
+   'Connection': 'keep-alive'}
+
+def getMostUsedImgs(querystring=None, separate_month=False, stringintitle=False, hash_threshold=0, loadcsv=''):
 	querystring = querystring.lower()
+	li_failedimgs = []
 
-	print('Connecting to database')
-	conn = sqlite3.connect("../4plebs_pol_test_database.db")
-
-	print('Beginning SQL query for "' + querystring + '"')
-
-	#if you get all comments, filter on 
-	if querystring == 'all':
-		querystring = querystring + '-' + str(datetime.strftime(datetime.fromtimestamp(mintime), "%m-%Y"))
-		df = pd.read_sql_query("SELECT timestamp, comment, media_hash FROM poldatabase WHERE timestamp > ? AND timestamp < ?;", conn, params=[mintime, maxtime])
-	#look for string in subject
-	elif stringintitle == False:
-		df = pd.read_sql_query("SELECT timestamp, comment, media_hash FROM poldatabase WHERE lower(comment) LIKE ?;", conn, params=['%' + querystring + '%'])
-	#look for sting in comment body (default)
+	#if a csv is loaded
+	if loadcsv != '':
+		print('Reading csv file')
+		df = pd.read_csv(loadcsv, encoding='utf-8')
 	else:
-		df = pd.read_sql_query("SELECT timestamp, title, media_hash FROM poldatabase WHERE lower(title) LIKE ?;", conn, params=['%' + querystring + '%'])
+		print('Connecting to database')
+		conn = sqlite3.connect("../4plebs_pol_test_database.db")
+
+		print('Beginning SQL query for "' + querystring + '"')
+		if querystring == 'all':
+			querystring = querystring + '-' + str(datetime.strftime(datetime.fromtimestamp(mintime), "%m-%Y"))
+			df = pd.read_sql_query("SELECT timestamp, comment, media_hash FROM poldatabase WHERE timestamp > ? AND timestamp < ?;", conn, params=[mintime, maxtime])
+		#look for string in subject
+		elif stringintitle == False:
+			df = pd.read_sql_query("SELECT timestamp, comment, media_hash FROM poldatabase WHERE lower(comment) LIKE ?;", conn, params=['%' + querystring + '%'])
+		#look for sting in comment body (default)
+		else:
+			df = pd.read_sql_query("SELECT timestamp, title, media_hash FROM poldatabase WHERE lower(title) LIKE ?;", conn, params=['%' + querystring + '%'])
 	
+	if separate_month == True:
+		for month in li_monthstamps:
+			getImgs(df_month)
+	else:
+		getImgs(df, querystring, hash_threshold)
+
+def getImgs(df, querystring, hash_threshold):
 	# create df with grouped and descending hashes
 	df['occurrances'] = [1] * len(df)
 	df = df.groupby('media_hash').agg({'occurrances': len})
@@ -46,18 +65,11 @@ def getMostUsedImgs(querystring=None, stringintitle=False, downloadimg_thres=100
 	# make folder
 	if os.path.exists('mostused_img/'+ querystring +'/') == False:
 		os.makedirs('mostused_img/'+ querystring +'/')
-	print(downloadimg_thres)
+	print(hash_threshold)
 	for index, count_image in enumerate(df['occurrances']):
 		imghash = df['hash'][index]
-		if count_image >= downloadimg_thres:
+		if count_image >= hash_threshold:
 			print('above threshold')
-			user_agent = 'Mozilla/5.0 (Windows NT 6.1; Win64; x64)'
-			headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11',
-		       'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-		       'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.3',
-		       'Accept-Encoding': 'none',
-		       'Accept-Language': 'en-US,en;q=0.8',
-		       'Connection': 'keep-alive'}
 			url = 'http://archive.4plebs.org/_/api/chan/search/?boards=pol&image=' + imghash
 			print(url)
 			request = urllib.request.Request(url, headers=headers)
@@ -72,16 +84,21 @@ def getMostUsedImgs(querystring=None, stringintitle=False, downloadimg_thres=100
 				print('Reason:', httperror.code)
 				pass
 			else:
-				#if 
 				data = response.read().decode('utf-8', 'ignore')
 				postdata = json.loads(data)
 
 				if 'error' not in postdata:
-					postdata = postdata['0']['posts'][0]['media']
-					#print(postdata)
-					if 'media_link' in postdata:
+					#loop through posts with image hash until image is downloaded (some are invalid)
+					print(len(postdata['0']['posts']))
+
+					#for index, post in enumerate(postdata['0']['posts']):
+					print('Trying to fetch image')
+					postmedia = postdata['0']['posts'][0]['media']
+					print(postmedia)
+					if 'media_link' in postmedia:
 						print('image found')
-						img_link = postdata['media_link']
+						img_link = postmedia['media_link']
+						thumb_link = postmedia['thumb_link']
 						print(img_link)
 						img_request = urllib.request.Request(img_link, headers=headers)
 						try:
@@ -89,6 +106,9 @@ def getMostUsedImgs(querystring=None, stringintitle=False, downloadimg_thres=100
 						except urllib.error.HTTPError as httperror:
 							print('HTTP error when requesting thread')
 							print('Reason:', httperror.code)
+							time.sleep(7)
+							#if the image can't be found, try to get the thumbnail
+							getThumbImg(thumb_link, imghash, count_image, querystring)
 							pass
 						else:
 							imagefile = io.BytesIO(img_response.read())
@@ -102,8 +122,41 @@ def getMostUsedImgs(querystring=None, stringintitle=False, downloadimg_thres=100
 							image.save('mostused_img/' + querystring + '/' + querystring + '_' + str(count_image) + '_' + imghash + '.' + str(image.format))
 					else:
 						print('no media found')
+					print('sleeping...')
+					time.sleep(12)
 				else:
+					li_failedimgs.append(imghash)
 					print('invalid image')
-			time.sleep(7)
+					print(str(len(li_failedimgs)) + ' failed images')
+					print(li_failedimgs)
 
-getMostUsedImgs(querystring='clinton', downloadimg_thres=3)
+			print('sleeping...')
+			time.sleep(12)
+	df_failedimgs = pd.DataFrame()
+	df_failedimgs['failed_hashes'] = li_failedimgs
+	df_failedimgs.to_csv('mostused_img/' + querystring + '/failed_hashes_' + querystring + '.csv', mode='a', encoding='utf-8')
+
+def getThumbImg(thumb_link, imghash, count_image, querystring):
+	print('Trying to get thumbnail.')
+	print(thumb_link)
+	img_request = urllib.request.Request(thumb_link, headers=headers)
+	try:
+		img_response = urllib.request.urlopen(img_request)
+	except urllib.error.HTTPError as httperror:
+		print('HTTP error when requesting thread')
+		print('Reason:', httperror.code)
+		getThumbImg(thumb_link)
+		pass
+	else:
+		print('Saving thumbnail')
+		imagefile = io.BytesIO(img_response.read())
+		image = Image.open(imagefile)
+		# print('imagesize: ' + str(image.size))
+		imagesize = image.size
+		#if imagesize[0] > 800 or imagesize[1] > 800:
+			# print('Resizing...')
+			#image.thumbnail(size)
+		imghash = imghash.replace('/','slash')
+		image.save('mostused_img/' + querystring + '/' + querystring + '_' + str(count_image) + '_' + imghash + '_thumb.' + str(image.format))
+							
+getMostUsedImgs(querystring='skyrim', separate_months=True, hash_threshold=0, loadcsv='mentions_comment_skyrim__.csv')

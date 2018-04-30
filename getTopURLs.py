@@ -181,7 +181,9 @@ def createHisto(dictionary, querystring):
 	# print(df.iloc[0])
 	print(li_timelabels[2:])
 	#colormap = plt.cm.nipy_spectral
-	colormap = ["#ffa173", "#b44eff", "#50ff5e","#003cae","#c2ff26","#000e4c","#39ff94","#ff6dd5","#249200","#ffabee","#a7ac00","#005e98","#e8ff78","#18001d","#cc9000","#9eb5ff","#ab0013","#019f5d","#620500","#d7ffea","#044500","#ffccdc","#017a81","#ffa392"]
+	#colormap = ["#ffa173", "#b44eff", "#50ff5e","#003cae","#c2ff26","#000e4c","#39ff94","#ff6dd5","#249200","#ffabee","#a7ac00","#005e98","#e8ff78","#18001d","#cc9000","#9eb5ff","#ab0013","#019f5d","#620500","#d7ffea","#044500","#ffccdc","#017a81","#ffa392"]
+	#moar colors
+	colormap = ["#478f79","#853bce","#7de354","#d245bc","#5eaa3b","#5858ce","#d5d840","#5b2575","#60db9e","#d73d77","#c3dd85","#bc72c8","#538746","#747ed0","#d88b2e","#343c6f","#d44530","#67d3d6","#8a2d49","#afd4b5","#3f1d2d","#d4b774","#639dd1","#968a2d","#d693bf","#3f4e1e","#bbc0e0","#793c20","#517988","#d68562","#283831","#d06f7b","#867758","#836079","#d9b9ac"]
 #plt.cm.get_cmap('gist_ncar')
 	
 	ax = df.plot(kind='bar', stacked=True, grid=True, width=.9, figsize=(14,10), colors=colormap)
@@ -220,4 +222,4 @@ def createHisto(dictionary, querystring):
 li_queries=['trump']
 
 for query in li_queries:
-	getTopURLs(piegraph=False, histo=True, threshold=300, querystring=query, title=False)
+	getTopURLs(piegraph=False, histo=True, threshold=200, querystring=query, title=False)
