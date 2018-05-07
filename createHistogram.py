@@ -190,4 +190,4 @@ def plotNewGraph(df, query):
 	plt.title('Amount of 4chan/pol/ comments containing "' + query + '" and having the "NL"-countryflag')
 
 	plt.savefig('../visualisations/substring_counts/' + query + '.svg', dpi='figure')
-	plt.savefig('../visualisations/substring_counts/' + query + '.jpg', dpi='figure')
+	plt.savefig('../visualisations/substring_counts/' + query + '.png', dpi='figure')
