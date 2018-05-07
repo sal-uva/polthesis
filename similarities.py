@@ -2,8 +2,8 @@ from __future__ import print_function
 import sqlite3
 import pandas as pd
 import numpy as np
-import matplotlib
-import matplotlib.pyplot as plt
+#import matplotlib
+import matplotlib.pyplot as plt, mpld3
 import time
 import re
 import os
@@ -167,11 +167,11 @@ def getDocSimilarity(li_strings, words_stemmed, dates, querystring):
 	#uncomment the below to save the plot if need be
 	plt.savefig('clusters_small_noaxes.png', dpi=200)
 
-def getWord2VecModel(train='', load='', modelname=''):
+def getWord2VecModel(train='', load='', modelname='', word_count=200):
 	if train != '':
 		# train model
 		# neighbourhood?
-		model = Word2Vec(train, min_count=2)
+		model = Word2Vec(train, min_count=word_count)
 		# pickle the entire model to disk, so we can load&resume training later
 		model.save('word2vec/w2v_model_' + modelname + '.model')
 		#store the learned weights, in a format the original C tool understands
@@ -199,7 +199,6 @@ def showPCAGraph(model):
 		pyplot.annotate(word, xy=(result[i, 0], result[i, 1]), size=6)
 	plt.rcParams.update({'font.size': 3})
 	pyplot.show()
-
 
 def tokeniserAndStemmer(string, stemming=False):
 	stemmer = SnowballStemmer("english")
@@ -268,123 +267,71 @@ def tsne_plot(model):
                      textcoords='offset points',
                      ha='right',
                      va='bottom')
-    plt.show()
+    #plt.show()
+
+def getTsneScatterPlot(model, word='', month=''):
+	print('getting vocab')
+	vocab = list(model.wv.vocab)
+	X = model[vocab]
+	tsne = TSNE(n_components=2)
+	print('fitting TSNE')
+	X_tsne = tsne.fit_transform(X)
+	print('writing DataFrame')
+	df = pd.DataFrame(X_tsne, index=vocab, columns=['x', 'y'])
+	print('creating plt figure')
+	fig = plt.figure(figsize=(18, 15))
+	ax = fig.add_subplot(1, 1, 1)
+
+	scatter = ax.scatter(df['x'].tolist(), df['y'].tolist(), facecolors='none', edgecolors='none')
+	labels = []
+	for word, pos in df.iterrows():
+		if word == 'trump':
+			ax.annotate(word, pos, fontsize=17, color='#bc2929')
+			ax.set_zorder(1000)
+		else:
+			ax.annotate(word, pos, fontsize=10, color='#4c4c4c')
+			ax.set_zorder(1000)
+		labels.append(word)
+
+	#save the mpl figures to pickle and zoom in later
+	pickle.dump(fig, open(r'word2vec/tsne/mpl_tsnescatterplot_' + month + '.pickle', 'wb'))
+	
+	#add interactive labels
+	tooltip = mpld3.plugins.PointLabelTooltip(scatter, labels=labels)
+	mpld3.plugins.connect(fig, tooltip)
+	#mpld3.show()
+	#save to html
+	mpld3.save_html(fig, 'word2vec/tsne/mpl_tsnescatterplot_' + month + '.html')
+	mpld3.save_html(fig, 'C:/Users/hagen/Dropbox/Universiteit van Amsterdam/J2S2 Thesis/visualisations/tsne/mpl_tsnescatterplot_' + month + '.html')
+
+	plt.gcf().clear()
 
 
-
-def display_closestwords_tsnescatterplot(model, word):
-    
-    arr = np.empty((0,len(model[word])), dtype='f')
-    word_labels = [word]
-
-    # get close words
-    close_words = model.similar_by_word(word)
-    
-    # add the vector for each of the closest words to the array
-    arr = np.append(arr, np.array([model[word]]), axis=0)
-    for wrd_score in close_words:
-        wrd_vector = model[wrd_score[0]]
-        word_labels.append(wrd_score[0])
-        arr = np.append(arr, np.array([wrd_vector]), axis=0)
-        
-    # find tsne coords for 2 dimensions
-    tsne = TSNE(n_components=2, random_state=0)
-    np.set_printoptions(suppress=True)
-    Y = tsne.fit_transform(arr)
-
-    x_coords = Y[:, 0]
-    y_coords = Y[:, 1]
-    # display scatter plot
-    plt.scatter(x_coords, y_coords)
-
-    for label, x, y in zip(word_labels, x_coords, y_coords):
-        plt.annotate(label, xy=(x, y), xytext=(0, 0), textcoords='offset points')
-    plt.xlim(x_coords.min()+0.00005, x_coords.max()+0.00005)
-    plt.ylim(y_coords.min()+0.00005, y_coords.max()+0.00005)
-    plt.show()
-
-
-def getsimilars():
+def getsimilars(word, month):
 	df_similars = pd.DataFrame()
 
 	# word1='must'
 	# word2='have'
 
-	word='btfo'
+	model = getWord2VecModel(load='word2vec/models/w2v_model_all-' + month + '.model')
+	similars = model.wv.most_similar(positive=[word], topn = 30)
+	df_similars[month] = [words[0] for words in similars]
+	df_similars['ratio-' + month] = [int((words[1] * 100)) for words in similars]
+	return df_similars
 
-	model = getWord2VecModel(load='word2vec/w2v_model_all-10-2015.model')
-	similars = model.wv.most_similar(positive=[word], topn = 30)
-	df_similars['10-2015'] = [words[0] for words in similars]
-	df_similars['ratio-10-2015'] = [int((words[1] * 100)) for words in similars]
-	print(similars)
-	# display_closestwords_tsnescatterplot(model, word)
-	model = getWord2VecModel(load='word2vec/w2v_model_all-11-2015.model')
-	similars = model.wv.most_similar(positive=[word], topn = 30)
-	df_similars['11-2015'] = [words[0] for words in similars]
-	df_similars['ratio-11-2015'] = [int((words[1] * 100)) for words in similars]
-	print(similars)
-	# display_closestwords_tsnescatterplot(model, word)
-	model = getWord2VecModel(load='word2vec/w2v_model_all-12-2015.model')
-	similars = model.wv.most_similar(positive=[word], topn = 30)
-	df_similars['12-2015'] = [words[0] for words in similars]
-	df_similars['ratio-12-2015'] = [int((words[1] * 100)) for words in similars]
-	print(similars)
-	# display_closestwords_tsnescatterplot(model, word)
-	model = getWord2VecModel(load='word2vec/w2v_model_all-01-2016.model')
-	similars = model.wv.most_similar(positive=[word], topn = 30)
-	df_similars['01-2016'] = [words[0] for words in similars]
-	df_similars['ratio-01-2016'] = [int((words[1] * 100)) for words in similars]
-	print(similars)
-	# display_closestwords_tsnescatterplot(model, word)
-	model = getWord2VecModel(load='word2vec/w2v_model_all-02-2016.model')
-	similars = model.wv.most_similar(positive=[word], topn = 30)
-	df_similars['02-2016'] = [words[0] for words in similars]
-	df_similars['ratio-02-2016'] = [int((words[1] * 100)) for words in similars]
-	print(similars)
-	# display_closestwords_tsnescatterplot(model, word)
-	model = getWord2VecModel(load='word2vec/w2v_model_all-03-2016.model')
-	similars = model.wv.most_similar(positive=[word], topn = 30)
-	df_similars['03-2016'] = [words[0] for words in similars]
-	df_similars['ratio-03-2016'] = [int((words[1] * 100)) for words in similars]
-	print(similars)
-	# display_closestwords_tsnescatterplot(model, word)
-	model = getWord2VecModel(load='word2vec/w2v_model_all-04-2016.model')
-	similars = model.wv.most_similar(positive=[word], topn = 30)
-	df_similars['04-2016'] = [words[0] for words in similars]
-	df_similars['ratio-04-2016'] = [int((words[1] * 100)) for words in similars]
-	print(similars)
-	# display_closestwords_tsnescatterplot(model, word)
-	model = getWord2VecModel(load='word2vec/w2v_model_all-05-2016.model')
-	similars = model.wv.most_similar(positive=[word], topn = 30)
-	df_similars['05-2016'] = [words[0] for words in similars]
-	df_similars['ratio-05-2016'] = [int((words[1] * 100)) for words in similars]
-	print(similars)
-	# display_closestwords_tsnescatterplot(model, word)
-	model = getWord2VecModel(load='word2vec/w2v_model_all-06-2016.model')
-	similars = model.wv.most_similar(positive=[word], topn = 30)
-	df_similars['06-2016'] = [words[0] for words in similars]
-	df_similars['ratio-06-2016'] = [int((words[1] * 100)) for words in similars]
-	print(similars)
-	# display_closestwords_tsnescatterplot(model, word)
-	model = getWord2VecModel(load='word2vec/w2v_model_all-07-2016.model')
-	similars = model.wv.most_similar(positive=[word], topn = 30)
-	df_similars['07-2016'] = [words[0] for words in similars]
-	df_similars['ratio-07-2016'] = [int((words[1] * 100)) for words in similars]
-	print(similars)
-	# display_closestwords_tsnescatterplot(model, word)
-	model = getWord2VecModel(load='word2vec/w2v_model_all-08-2016.model')
-	similars = model.wv.most_similar(positive=[word], topn = 30)
-	df_similars['08-2016'] = [words[0] for words in similars]
-	df_similars['ratio-08-2016'] = [int((words[1] * 100)) for words in similars]
-	print(similars)
-	# display_closestwords_tsnescatterplot(model, word)
-	model = getWord2VecModel(load='word2vec/w2v_model_all-09-2016.model')
-	similars = model.wv.most_similar(positive=[word], topn = 30)
-	df_similars['09-2016'] = [words[0] for words in similars]
-	df_similars['ratio-09-2016'] = [int((words[1] * 100)) for words in similars]
-	print(similars)
-	# display_closestwords_tsnescatterplot(model, word)
-	df_similars.to_csv('word2vec/w2v_most_similar_' + word + '.csv')
+li_months = ['10-2015','11-2015','12-2015','01-2016','02-2016','03-2016','04-2016','05-2016','06-2016','07-2016','08-2016','09-2016','10-2016','11-2016','12-2016','01-2017','02-2017','03-2017','04-2017','05-2017','06-2017','07-2017','08-2017','09-2017','10-2017','11-2017','12-2017','01-2018','02-2018','03-2018']
 
-	#getSimilaritiesFromCsv('substring_mentions/all_01-2016.csv', modelname='all-01-2016')
-getsimilars()
+word = 'trump'
+for month in li_months:
+	# print('Getting w2v similarities for ' + word + ' in ' + month)
+	# df_similar = getsimilars(word, month)
+	# dfs = [df_allmodels,df_similar]
+	# df_allmodels = pd.concat(dfs, axis=1)
+
+	with open('word2vec/pickle_stems/pickle_all-' + month + '.p', 'rb') as pickle_file:
+		words = pickle.load(pickle_file)
+	# model = getWord2VecModel(load='word2vec/w2v_model_10-2015-4000lim.model', modelname=month + '-500lim')
+	model = getWord2VecModel(train=words, modelname=month + '-200lim', word_count=200)
+	# print(month, model.wv.similarity(model1[word], model2[word]))
+	# model2 = model1
+	getTsneScatterPlot(model=model, month=month)
