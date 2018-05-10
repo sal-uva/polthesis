@@ -61,7 +61,7 @@ def createHistogram(inputdf, querystring, inputtimeformat, normalised):
 		#print(mpl_dates)
 		#print(timebuckets)
 
-	# plot it!
+	# plot it
 	fig, ax = plt.subplots(1,1)
 	ax.hist(mpl_dates, bins=timebuckets, align="left", color='red', ec="k")
 	histo = ax.hist(mpl_dates, bins=timebuckets, align="left", color='red', ec="k")
@@ -93,8 +93,8 @@ def createHistogram(inputdf, querystring, inputtimeformat, normalised):
 	li_counts = []
 	#print(ax.xaxis.get_ticklabels())
 	li_axisticks = ax.xaxis.get_majorticklabels()
-	li_axisticks = li_axisticks[:-2]
-	li_axisticks = li_axisticks[2:]
+	li_axisticks = li_axisticks[:-3]
+	li_axisticks = li_axisticks[3:]
 	#print(li_axisticks)
 	li_matchticks = []
 	for text in li_axisticks:
@@ -187,7 +187,101 @@ def plotNewGraph(df, query):
 	ax1.set_ylabel('Absolute amount', color='#52b6dd')
 	ax2.set_ylabel('Percentage of total comments', color='#d12d04')
 	ax2.set_ylim(bottom=0)
-	plt.title('Amount of 4chan/pol/ comments containing "' + query + '" and having the "NL"-countryflag')
+	plt.title('Amount of 4chan/pol/ comments containing "' + query + '"')
 
 	plt.savefig('../visualisations/substring_counts/' + query + '.svg', dpi='figure')
 	plt.savefig('../visualisations/substring_counts/' + query + '.jpg', dpi='figure')
+
+def plotMultipleTrends(df1=None,df2=None,df3=None, query='', filename='', twoaxes=False):
+	df_1 = df1.loc[1:].reset_index()
+	print(df1)
+	print(df_1)
+	df_1['numbs'] = [x for x in range(len(df_1))]
+	datelabels = [date for date in df_1['dateformatted']]
+	df_2 = df2.loc[1:].reset_index()
+	df_3 = df3.loc[1:].reset_index()
+
+	fig = plt.figure(figsize=(12, 8))
+	fig.set_dpi(100)
+	ax = fig.add_subplot(111)
+
+	if twoaxes:
+		df_1.plot(ax=ax, y='percentage', label = 'trump', kind='line', legend=False, linewidth=2, color='orange');
+		ax2 = ax.twinx()
+		df_2.plot(ax=ax2, y='percentage',  label = 'god-emperor', kind='line', legend=False, linewidth=2, color='blue');
+	else:
+		df_1.plot(ax=ax, y='percentage', label = 'trump', kind='line', legend=False, linewidth=2, color='orange');
+		df_2.plot(ax=ax, y='percentage',  label = 'nice', kind='line', legend=False, linewidth=2, color='blue');
+		df_3.plot(ax=ax, y='percentage',  label = 'would', kind='line', legend=False, linewidth=2, color='green');
+	ax.set_xticks(df_1['numbs'])
+	ax.set_xticklabels(df_1['date'], rotation=90)
+
+	lines, labels = ax.get_legend_handles_labels()
+	plt.xlim([0,len(datelabels) -1])
+	ax.set_ylim(bottom=0)
+	ax.set_axisbelow(True)
+	#ax2.set_axisbelow(True)
+	ax.grid(color='#e5e5e5',linestyle='dashed', linewidth=.6)
+	ax.set_ylabel('Percentage of total comments')
+	plt.title('Percentage of 4chan/pol/ comments containing "' + query + '"')
+
+	if twoaxes:
+		lines2, labels2 = ax2.get_legend_handles_labels()
+		print('do nothing')
+		ax2.legend(lines + lines2, labels + labels2, loc='upper left')
+	# 	lns = ln1 + ln2
+	# 	labs = [l.get_label() for axes in ln1]
+		ax2.set_ylim(bottom=0)
+	# 	ax.legend(lns, labs, loc='upper left')
+	else:
+		ax.legend(loc='upper left')
+
+	plt.savefig('../visualisations/substring_counts/' + filename + '_multiple.svg', dpi='figure')
+	plt.savefig('../visualisations/substring_counts/' + filename + '_multiple.jpg', dpi='figure')
+	#plt.show()
+
+def createHistoFromTfidf(df='', li_words=''):
+	df = df[df['word'].isin([li_words])]
+	df = df.transpose()
+	print(df)
+	quit()
+	df['numbs'] = [x for x in range(len(df))]
+	datelabels = [date for date in df['dateformatted']]
+
+	fig = plt.figure(figsize=(12, 8))
+	fig.set_dpi(100)
+	ax = fig.add_subplot(111)
+
+	df.plot(ax=ax, y='percentage', label = 'trump', kind='line', legend=False, linewidth=2, color='orange');
+	
+	ax.set_xticks(df['numbs'])
+	ax.set_xticklabels(df['date'], rotation=90)
+
+	lines, labels = ax.get_legend_handles_labels()
+	plt.xlim([0,len(datelabels) -1])
+	ax.set_ylim(bottom=0)
+	ax.set_axisbelow(True)
+	#ax2.set_axisbelow(True)
+	ax.grid(color='#e5e5e5',linestyle='dashed', linewidth=.6)
+	ax.set_ylabel('Percentage of total comments')
+	plt.title('Percentage of 4chan/pol/ comments containing "' + query + '"')
+
+	if twoaxes:
+		lines2, labels2 = ax2.get_legend_handles_labels()
+		print('do nothing')
+		ax2.legend(lines + lines2, labels + labels2, loc='upper left')
+	# 	lns = ln1 + ln2
+	# 	labs = [l.get_label() for axes in ln1]
+		ax2.set_ylim(bottom=0)
+	# 	ax.legend(lns, labs, loc='upper left')
+	else:
+		ax.legend(loc='upper left')
+
+	plt.savefig('tfidf/' + filename + '_trump_tfidf.svg', dpi='figure')
+	plt.savefig('tfidf/' + filename + '_trump_tfidf.jpg', dpi='figure')
+	#plt.show()
+
+# df1 = pd.read_csv('substring_mentions/occurrances_trump.csv')
+# df2 = pd.read_csv('substring_mentions/occurrances_nice.csv')
+# df3 = pd.read_csv('substring_mentions/occurrances_would.csv')
+# plotMultipleTrends(df1=df1,df2=df2,df3=df3, query='trump", "nice" and "would', filename='trump_nice_would', twoaxes = False)

@@ -17,7 +17,6 @@ from PIL import Image
 # full db: 4plebs_pol_18_03_2018
 # full table: poldatabase_18_03_2018
 
-<<<<<<< HEAD
 user_agent = 'Mozilla/5.0 (Windows NT 6.1; Win64; x64)'
 headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11',
    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -25,20 +24,17 @@ headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KH
    'Accept-Encoding': 'none',
    'Accept-Language': 'en-US,en;q=0.8',
    'Connection': 'keep-alive'}
-=======
+
 def getMostUsedImgs(querystring=None, stringintitle=False, downloadimg_thres=1000):
 	querystring = querystring.lower()
 
 	print('Connecting to database')
 	conn = sqlite3.connect("../4plebs_pol_18_03_2018.db")
->>>>>>> 1d5dd5fd73547b4e91609e039796b15683cd9c53
 
 def getMostUsedImgs(querystring=None, separate_month=False, stringintitle=False, hash_threshold=0, loadcsv=''):
 	querystring = querystring.lower()
 	li_failedimgs = []
 
-<<<<<<< HEAD
-	#if a csv is loaded
 	if loadcsv != '':
 		print('Reading csv file')
 		df = pd.read_csv(loadcsv, encoding='utf-8')
@@ -56,18 +52,6 @@ def getMostUsedImgs(querystring=None, separate_month=False, stringintitle=False,
 		#look for sting in comment body (default)
 		else:
 			df = pd.read_sql_query("SELECT timestamp, title, media_hash FROM poldatabase WHERE lower(title) LIKE ?;", conn, params=['%' + querystring + '%'])
-=======
-	#if you get all comments, filter on 
-	if querystring == 'all':
-		querystring = querystring + '-' + str(datetime.strftime(datetime.fromtimestamp(mintime), "%m-%Y"))
-		df = pd.read_sql_query("SELECT timestamp, comment, media_hash FROM poldatabase_18_03_2018 WHERE timestamp > ? AND timestamp < ?;", conn, params=[mintime, maxtime])
-	#look for string in subject
-	elif stringintitle == False:
-		df = pd.read_sql_query("SELECT timestamp, comment, media_hash FROM poldatabase_18_03_2018 WHERE lower(comment) LIKE ?;", conn, params=['%' + querystring + '%'])
-	#look for sting in comment body (default)
-	else:
-		df = pd.read_sql_query("SELECT timestamp, title, media_hash FROM poldatabase_18_03_2018 WHERE lower(title) LIKE ?;", conn, params=['%' + querystring + '%'])
->>>>>>> 1d5dd5fd73547b4e91609e039796b15683cd9c53
 	
 	if separate_month == True:
 		for month in li_monthstamps:
@@ -148,7 +132,7 @@ def getImgs(df, querystring, hash_threshold):
 					print('sleeping...')
 					time.sleep(12)
 				else:
-<<<<<<< HEAD
+
 					li_failedimgs.append(imghash)
 					print('invalid image')
 					print(str(len(li_failedimgs)) + ' failed images')
@@ -184,7 +168,6 @@ def getThumbImg(thumb_link, imghash, count_image, querystring):
 		image.save('mostused_img/' + querystring + '/' + querystring + '_' + str(count_image) + '_' + imghash + '_thumb.' + str(image.format))
 							
 getMostUsedImgs(querystring='skyrim', separate_months=True, hash_threshold=0, loadcsv='mentions_comment_skyrim__.csv')
-=======
 					print(postdata)
 					print('invalid, trying thumb')
 					time.sleep(13)
@@ -246,4 +229,3 @@ getMostUsedImgs(querystring='skyrim', separate_months=True, hash_threshold=0, lo
 			time.sleep(13)
 
 getMostUsedImgs(querystring='trump', downloadimg_thres=25)
->>>>>>> 1d5dd5fd73547b4e91609e039796b15683cd9c53
