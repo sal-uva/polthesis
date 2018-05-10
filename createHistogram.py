@@ -190,6 +190,7 @@ def plotNewGraph(df, query):
 	plt.title('Amount of 4chan/pol/ comments containing "' + query + '"')
 
 	plt.savefig('../visualisations/substring_counts/' + query + '.svg', dpi='figure')
+<<<<<<< HEAD
 	plt.savefig('../visualisations/substring_counts/' + query + '.jpg', dpi='figure')
 
 def plotMultipleTrends(df1=None,df2=None,df3=None, query='', filename='', twoaxes=False):
@@ -285,3 +286,6 @@ def createHistoFromTfidf(df='', li_words=''):
 # df2 = pd.read_csv('substring_mentions/occurrances_nice.csv')
 # df3 = pd.read_csv('substring_mentions/occurrances_would.csv')
 # plotMultipleTrends(df1=df1,df2=df2,df3=df3, query='trump", "nice" and "would', filename='trump_nice_would', twoaxes = False)
+=======
+	plt.savefig('../visualisations/substring_counts/' + query + '.png', dpi='figure')
+>>>>>>> 5570f07e0fb03ec6b32d591d0b79901021db1150

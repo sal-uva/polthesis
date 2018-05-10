@@ -24,17 +24,24 @@ headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KH
    'Accept-Encoding': 'none',
    'Accept-Language': 'en-US,en;q=0.8',
    'Connection': 'keep-alive'}
+<<<<<<< HEAD
 
 def getMostUsedImgs(querystring=None, stringintitle=False, downloadimg_thres=1000):
 	querystring = querystring.lower()
 
 	print('Connecting to database')
 	conn = sqlite3.connect("../4plebs_pol_18_03_2018.db")
+=======
+>>>>>>> 5570f07e0fb03ec6b32d591d0b79901021db1150
 
 def getMostUsedImgs(querystring=None, separate_month=False, stringintitle=False, hash_threshold=0, loadcsv=''):
 	querystring = querystring.lower()
 	li_failedimgs = []
 
+<<<<<<< HEAD
+=======
+	#if a csv is loaded, load csv, else check the database
+>>>>>>> 5570f07e0fb03ec6b32d591d0b79901021db1150
 	if loadcsv != '':
 		print('Reading csv file')
 		df = pd.read_csv(loadcsv, encoding='utf-8')
@@ -55,11 +62,12 @@ def getMostUsedImgs(querystring=None, separate_month=False, stringintitle=False,
 	
 	if separate_month == True:
 		for month in li_monthstamps:
-			getImgs(df_month)
+			df_month = 
+			getImgs(df=df_month, querystring=querystring, hash_threshold=hash_threshold, timesep=True)
 	else:
-		getImgs(df, querystring, hash_threshold)
+		getImgs(df=df, querystring=querystring, hash_threshold=hash_threshold, timesep=False)
 
-def getImgs(df, querystring, hash_threshold):
+def getImgs(df, querystring, hash_threshold, timesep=False):
 	# create df with grouped and descending hashes
 	df['occurrances'] = [1] * len(df)
 	df = df.groupby('media_hash').agg({'occurrances': len})
@@ -114,7 +122,7 @@ def getImgs(df, querystring, hash_threshold):
 							print('Reason:', httperror.code)
 							time.sleep(7)
 							#if the image can't be found, try to get the thumbnail
-							getThumbImg(thumb_link, imghash, count_image, querystring)
+							getThumbImg(thumb_link, imghash, count_image, querystring, timesep=timesep)
 							pass
 						else:
 							if '.webm' not in imagefile:
@@ -132,7 +140,10 @@ def getImgs(df, querystring, hash_threshold):
 					print('sleeping...')
 					time.sleep(12)
 				else:
+<<<<<<< HEAD
 
+=======
+>>>>>>> 5570f07e0fb03ec6b32d591d0b79901021db1150
 					li_failedimgs.append(imghash)
 					print('invalid image')
 					print(str(len(li_failedimgs)) + ' failed images')
@@ -144,7 +155,7 @@ def getImgs(df, querystring, hash_threshold):
 	df_failedimgs['failed_hashes'] = li_failedimgs
 	df_failedimgs.to_csv('mostused_img/' + querystring + '/failed_hashes_' + querystring + '.csv', mode='a', encoding='utf-8')
 
-def getThumbImg(thumb_link, imghash, count_image, querystring):
+def getThumbImg(thumb_link, imghash, count_image, querystring, timesep):
 	print('Trying to get thumbnail.')
 	print(thumb_link)
 	img_request = urllib.request.Request(thumb_link, headers=headers)
@@ -165,8 +176,12 @@ def getThumbImg(thumb_link, imghash, count_image, querystring):
 			# print('Resizing...')
 			#image.thumbnail(size)
 		imghash = imghash.replace('/','slash')
-		image.save('mostused_img/' + querystring + '/' + querystring + '_' + str(count_image) + '_' + imghash + '_thumb.' + str(image.format))
+		if timesep:
+			image.save('mostused_img/' + querystring + '/' + querystring + '_' + str(count_image) + '_' + imghash + '_thumb.' + str(image.format))
+		else:
+			image.save('mostused_img/' + querystring + '/' + querystring + '_' + str(count_image) + '_' + imghash + '_thumb.' + str(image.format))
 							
+<<<<<<< HEAD
 getMostUsedImgs(querystring='skyrim', separate_months=True, hash_threshold=0, loadcsv='mentions_comment_skyrim__.csv')
 					print(postdata)
 					print('invalid, trying thumb')
@@ -229,3 +244,6 @@ getMostUsedImgs(querystring='skyrim', separate_months=True, hash_threshold=0, lo
 			time.sleep(13)
 
 getMostUsedImgs(querystring='trump', downloadimg_thres=25)
+=======
+getMostUsedImgs(querystring='skyrim', separate_months=True, hash_threshold=0, loadcsv='mentions_comment_skyrim__.csv')
+>>>>>>> 5570f07e0fb03ec6b32d591d0b79901021db1150
