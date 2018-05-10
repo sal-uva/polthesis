@@ -181,3 +181,43 @@ def getTimeSeparatedCsvs(df='', timesep='months'):
 # print(li_times_weeks)
 
 #substringFilter(querystring='unstumped', histogram=True)
+
+def getTrumpThreads(querystring=''):
+	print('Connecting to database')
+	conn = sqlite3.connect("../4plebs_pol_test_database.db")
+
+	print('Fetching all OPs with "obama"')
+	if 1 == 2:
+		cursor=conn.cursor()
+		cursor.execute("""
+					CREATE TABLE has_obama AS
+					SELECT thread_num as 'thread_no', trump_count FROM
+					(
+						SELECT thread_num, trump_count, comment FROM (
+							SELECT thread_num, count(*) as trump_count, comment FROM
+							(
+								SELECT thread_num, comment FROM poldatabase
+								WHERE (lower(comment) LIKE '%obama%' OR lower(title) LIKE '%obama%') AND timestamp > 1388534400
+							)
+							GROUP BY thread_num
+							ORDER BY trump_count DESC
+							)
+						WHERE trump_count >= 5
+						)
+					;""")
+	
+	df_trump_thread = pd.read_sql_query("""
+					SELECT thread_count, trump_count, (thread_count / trump_count) as trump_density FROM (
+						SELECT thread_count, trump_count FROM(
+							SELECT thread_no, trump_count, count(*) as thread_count FROM poldatabase
+							INNER JOIN has_obama ON has_obama.thread_no = poldatabase.thread_num
+							GROUP BY thread_no
+							ORDER BY thread_count
+							)
+						)
+
+					WHERE thread_count > 50 AND trump_density >= 10;""", conn)
+	print(df_trump_thread[:50])
+	df_trump_thread.to_csv('trump_threads_test.csv', encoding='utf-8')
+#now testing with 'obama'
+getTrumpThreads()
