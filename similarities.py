@@ -2,7 +2,6 @@ from __future__ import print_function
 import sqlite3
 import pandas as pd
 import numpy as np
-#import matplotlib
 import matplotlib.pyplot as plt, mpld3
 import time
 import re
@@ -23,7 +22,9 @@ from sklearn.manifold import MDS
 from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
 from gensim.models import Word2Vec
+from gensim.scripts.word2vec2tensor import word2vec2tensor
 from matplotlib import pyplot
+from adjustText import adjust_text
 
 #month variables, so I don't have to mess with datetime
 li_months = ['10-2015','11-2015','12-2015','01-2016','02-2016','03-2016','04-2016','05-2016','06-2016','07-2016','08-2016','09-2016','10-2016','11-2016','12-2016','01-2017','02-2017','03-2017','04-2017','05-2017','06-2017','07-2017','08-2017','09-2017','10-2017','11-2017','12-2017','01-2018','02-2018','03-2018']
@@ -32,8 +33,16 @@ li_filenames = ['01-16.csv', '01-17.csv', '01-18.csv', '02-16.csv', '02-17.csv',
 
 li_labels_months = ['06-15', '07-15', '08-15', '09-15', '10-15', '11-15', '12-15', '01-16', '02-16', '03-16', '04-16', '05-16', '06-16', '07-16', '08-16', '09-16', '10-16', '11-16', '12-16', '01-17', '02-17', '03-17', '04-17', '05-17', '06-17', '07-17', '08-17', '09-17', '10-17', '11-17', '12-17','01-18', '02-18']
 
+# di_stems = {}
+# di_stems['randomwoord1212'] = 0
+# pickle.dump(di_stems, open('di_stems.p', 'wb'))
+# quit()
 
-def getTokens(li_strings='', similaritytype='docs', stems=False):
+def getTokens(li_strings='', stemming=False):
+	if stemming:
+		global di_stems
+		di_stems = pickle.load(open('di_stems.p', 'rb'))
+
 	print('imported')
 	#do some cleanup: only alphabetic characters, no stopwords
 	# create separate stemmed tokens, to which the full strings will be compared to:
@@ -45,12 +54,59 @@ def getTokens(li_strings='', similaritytype='docs', stems=False):
 		#create list of list for comments and tokens
 		if isinstance(comment, str):
 			li_comment_stemmed = []
-			li_comment_stemmed = tokeniserAndStemmer(comment)
+			li_comment_stemmed = tokeniserAndStemmer(comment, stemming=stemming)
 			li_comments_stemmed.append(li_comment_stemmed)
 		if index % 1000 == 0:
 			print('Stemming/tokenising finished for string ' + str(index) + '/' + str(len_comments))
 	print(len(li_comments_stemmed))
+
+	if stemming:
+		pickle.dump(di_stems, open('di_stems.p', 'wb'))
+		df_stems = pd.DataFrame.from_dict(di_stems, orient='index')
+		df_stems.to_csv('di_stems_dataframe.csv', encoding='utf-8')
+
 	return li_comments_stemmed
+
+def tokeniserAndStemmer(string, stemming=False):
+	#first, remove urls
+	if 'http' in string:
+		string = re.sub(r'https?:\/\/.*[\r\n]*', ' ', string)
+	if 'www.' in string:
+		string = re.sub(r'www.*[\r\n]*', ' ', string)
+
+	#use nltk's tokeniser to get a list of words
+	tokens = [word for sent in nltk.sent_tokenize(string) for word in nltk.word_tokenize(sent)]
+	stemmer = SnowballStemmer("english")
+	#list with tokens further processed
+	li_filtered_tokens = []
+	# filter out any tokens not containing letters (e.g., numeric tokens, raw punctuation)
+	for token in tokens:
+		#only alphabetic characters
+		if re.search('[a-zA-Z]', token):
+			#only tokens with three or more characters
+			if len(token) >= 3:
+				#no stopwords
+				if token not in stopwords.words('english'):
+					token = token.lower()
+					#shorten word if it's longer than 20 characters (e.g. 'reeeeeeeeeeeeeeeeeeeeeeeee')
+					if len(token) >= 20:
+						token = token[:20]
+					#stem if indicated it should be stemmed
+					if stemming:
+						token_stemmed = stemmer.stem(token)
+						li_filtered_tokens.append(token_stemmed)
+
+						#update lookup dict with token and stemmed token
+						#lookup dict is dict of stemmed words as keys and lists as full tokens
+						if token_stemmed in di_stems:
+							if token not in di_stems[token_stemmed]:
+								di_stems[token_stemmed].append(token)
+						else:
+							di_stems[token_stemmed] = []
+							di_stems[token_stemmed].append(token)
+					else:
+						li_filtered_tokens.append(token)
+	return li_filtered_tokens
 
 def getDocSimilarity(li_strings='', dates='', querystring='', load=False, kmeansgraph=False):
 	# look up iterative k-means
@@ -209,19 +265,17 @@ def getDocSimilarity(li_strings='', dates='', querystring='', load=False, kmeans
 		#uncomment the below to save the plot if need be
 		plt.savefig('clusters_small_noaxes.png', dpi=200)
 
-def getWord2VecModel(train='', load='', modelname='', word_count=200):
+def getWord2VecModel(train='', load='', modelname='', min_word=200):
 	if train != '':
 		# train model
 		# neighbourhood?
-		model = Word2Vec(train, min_count=word_count)
+		model = Word2Vec(train, min_count=min_word)
 		# pickle the entire model to disk, so we can load&resume training later
-		model.save('word2vec/w2v_model_' + modelname + '.model')
+		model.save('word2vec/models/' + modelname + '.model')
 		#store the learned weights, in a format the original C tool understands
-		model.wv.save_word2vec_format('word2vec/w2v_model_' + modelname + '.model.bin', binary=True)
+		model.wv.save_word2vec_format('word2vec/models/' + modelname + '.model.bin', binary=True)
 		return model
 	elif load != '':
-		# or, import word weights created by the (faster) C word2vec
-		# this way, you can switch between the C/Python toolkits easily
 		model = Word2Vec.load(load)
 		return model
 	
@@ -242,23 +296,6 @@ def showPCAGraph(model):
 	plt.rcParams.update({'font.size': 3})
 	pyplot.show()
 
-def tokeniserAndStemmer(string, stemming=False):
-	stemmer = SnowballStemmer("english")
-	tokens = [word for sent in nltk.sent_tokenize(string) for word in nltk.word_tokenize(sent)]
-	li_filtered_tokens = []
-	# filter out any tokens not containing letters (e.g., numeric tokens, raw punctuation)
-	for token in tokens:
-		if re.search('[a-zA-Z]', token):
-			if len(token) > 2 and len(token) < 20:
-				# if token not in stopwords.words('english'):
-				# 	token = token.lower()
-				li_filtered_tokens.append(token)
-	if stemming == True:
-		stems = [stemmer.stem(t) for t in li_filtered_tokens]
-		return stems
-	else:
-		return li_filtered_tokens
-
 # some calls for these function come from substring
 def getSimilaritiesFromCsv(df, modelname = ''):
 	#df = pd.read_csv(csvdoc, encoding='utf-8')
@@ -278,74 +315,50 @@ def getSimilaritiesFromCsv(df, modelname = ''):
 	# similars = model.similar_by_vector(model['hillari'] + model['polit'])
 	# print(similars)
 
-
-def tsne_plot(model):
-    "Creates and TSNE model and plots it"
-    labels = []
-    tokens = []
-
-    print(len(model.wv.vocab))
-    for index, word in enumerate(model.wv.vocab):
-        tokens.append(model[word])
-        labels.append(word)
-        if (index % 1000 == 0):
-        	print(index)
-    
-    tsne_model = TSNE(perplexity=40, n_components=2, init='pca', n_iter=2500, random_state=23)
-    new_values = tsne_model.fit_transform(tokens)
-
-    x = []
-    y = []
-    for value in new_values:
-        x.append(value[0])
-        y.append(value[1])
-        
-    plt.figure(figsize=(16, 16)) 
-    for i in range(len(x)):
-        plt.scatter(x[i],y[i])
-        plt.annotate(labels[i],
-                     xy=(x[i], y[i]),
-                     xytext=(5, 2),
-                     textcoords='offset points',
-                     ha='right',
-                     va='bottom')
-    #plt.show()
-
-def getTsneScatterPlot(model, word='', month=''):
+def getTsneScatterPlot(model, plotname='', perplexity=10):
 	print('getting vocab')
 	vocab = list(model.wv.vocab)
 	X = model[vocab]
-	tsne = TSNE(n_components=2)
+	#TSNE args: perplexity=40, n_components=2, init='pca', n_iter=2500, random_state=23
+	tsne = TSNE(n_components=2, perplexity=perplexity)
 	print('fitting TSNE')
 	X_tsne = tsne.fit_transform(X)
 	print('writing DataFrame')
 	df = pd.DataFrame(X_tsne, index=vocab, columns=['x', 'y'])
 	print('creating plt figure')
-	fig = plt.figure(figsize=(18, 15))
+	fig = plt.figure(figsize=(15, 13))
 	ax = fig.add_subplot(1, 1, 1)
 
 	scatter = ax.scatter(df['x'].tolist(), df['y'].tolist(), facecolors='none', edgecolors='none')
 	labels = []
 	for word, pos in df.iterrows():
 		if 'trump' in word:
-			ax.annotate(word, pos, fontsize=17, color='#bc2929')
+			ax.annotate(word, pos, fontsize=17, color='#E1313199')
+			ax.set_zorder(1000)
+		if 'haha' in word or 'lol' in word or 'reee' in word or 'lmfao' in word:
+			ax.annotate(word, pos, fontsize=17, color='#3F902790')
 			ax.set_zorder(1000)
 		else:
-			ax.annotate(word, pos, fontsize=10, color='#4c4c4c')
+			ax.annotate(word, pos, fontsize=7, color='#4f4f4f80')
 			ax.set_zorder(10)
 		labels.append(word)
+	#adjust_text(labels, force_text=0.05, arrowprops=dict(arrowstyle="-|>", color='gray', alpha=0.1))
 
 	#save the mpl figures to pickle and zoom in later
-	pickle.dump(fig, open(r'word2vec/tsne/mpl_tsnescatterplot_' + month + '.pickle', 'wb'))
+	pickle.dump(fig, open(r'word2vec/tsne/mpl_tsnescatterplot_' + plotname + '.pickle', 'wb'))
 	
+	css='*{font-family: Arial, sans-serif;}'
+	tooltip2 = mpld3.plugins.PointHTMLTooltip(fig, css=css)
+	mpld3.plugins.connect(fig, tooltip2)
 	#add interactive labels
 	tooltip = mpld3.plugins.PointLabelTooltip(scatter, labels=labels)
 	mpld3.plugins.connect(fig, tooltip)
 	#mpld3.show()
 	#save to html
-	mpld3.save_html(fig, 'word2vec/tsne/mpl_tsnescatterplot_' + month + '.html')
+	mpld3.save_html(fig, 'word2vec/tsne/mpl_tsnescatterplot_' + plotname + '.html')
+	plt.savefig('word2vec/tsne/mpl_tsnescatterplot_' + plotname + '.png', dpi=200)
+	plt.savefig('C:/Users/hagen/Dropbox/Universiteit van Amsterdam/J2S2 Thesis/visualisations/tsne/mpl_tsnescatterplot_' + plotname + '.png', dpi=200)
 	plt.gcf().clear()
-
 
 def getsimilars(word, month):
 	df_similars = pd.DataFrame()
@@ -390,5 +403,42 @@ def createTokensOfCsv():
 
 #tokens = createTokensOfCsv()
 
+# df_trumpthreads = pd.read_csv('substring_mentions/mentions_trump/trump_threads/trump_threads_15percent_30min.csv', encoding='utf-8')
+# li_strings = df_trumpthreads['comment'].tolist()
+# df_trumpthreads = ''
 
-#getDocSimilarity(li_strings=tokens, dates=li_labels_months, querystring='trump', load=False, kmeansgraph=True)
+#both a stemmed and non-stemmed version
+# words_stemmed = getTokens(li_strings, stemming=True)
+# pickle.dump(words_stemmed, open('substring_mentions/mentions_trump/trump_threads/trump_threads_tokens_15percent_30min_stemmed.p', 'wb'))
+# model = getWord2VecModel(train=words_stemmed, modelname='model_trump_threads_15percent_30min_stemmed')
+
+# pickle.dump(words_stemmed, open('substring_mentions/mentions_trump/trump_threads/trump_threads_tokens_15percent_30min.p', 'wb'))
+
+#words_stemmed = pickle.load(open('substring_mentions/mentions_trump/trump_threads/trump_threads_tokens_15percent_30min_stemmed.p', 'rb'))
+# model = getWord2VecModel(load='word2vec/models/w2v_model_all-05-2017.model')
+# print(model.most_similar(positive=['kekistan']))
+# model = getWord2VecModel(load='word2vec/models/w2v_model_all-06-2017.model')
+# print(model.most_similar(positive=['kekistan'], topn=30))
+# model = getWord2VecModel(load='word2vec/models/w2v_model_all-07-2017.model')
+# print(model.most_similar(positive=['kekistan']))
+# model = getWord2VecModel(load='word2vec/models/w2v_model_all-08-2017.model')
+# print(model.most_similar(positive=['kekistan']))
+
+# df_trumpthreads = pd.read_csv('substring_mentions/mentions_trump/trump_threads/trump_threads_15percent_30min.csv', engine='python', encoding='utf-8')
+# dates = df_trumpthreads['date_month'].unique()
+# for month in dates:
+# 	print('Creating DataFrame and stemming for ' + month)
+# 	df_month = df_trumpthreads[df_trumpthreads['date_month'] == month]
+# 	df_month.to_csv('substring_mentions/mentions_trump/trump_threads/trump_threads_15percent_30min_' + month + '.csv', encoding='utf-8')
+# 	li_strings = df_month['comment'].tolist()
+# 	words_stemmed = getTokens(li_strings, stemming=True)
+# 	pickle.dump(words_stemmed, open('substring_mentions/mentions_trump/trump_threads/trump_threads_tokens_15percent_30min_stemmed_' + month + '.p', 'wb'))
+# 	model = getWord2VecModel(train=li_strings, modelname='model_trump_threads_15percent_30min_stemmed' + month)
+
+# folder = 'substring_mentions/mentions_trump/trump_threads/months/'
+# for root, dirs, files in os.walk(folder):
+# 	for filename in files:
+# 		print(filename)
+# 		words_stemmed = pickle.load(open(folder + filename, 'rb'))
+# 		model = getWord2VecModel(train=words_stemmed, modelname='trumpthreads/model_' + filename)
+# 		getTsneScatterPlot(model, plotname='model_trump_threads_15percent_30min_200minword_stemmed' + filename)

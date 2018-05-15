@@ -1,25 +1,12 @@
-*.csv
-*.csv#
-*.txt
+*.p
 *.pkl
-*.pyc
-*.bin
-*.model
-<<<<<<< HEAD
-*.npy
-=======
+*.csv
 *.JPEG
 *.PNG
->>>>>>> aba906f56740ffcf48055c7291fb894b632ee310
-<<<<<<< HEAD
-mostused_img/politic/politic_4_rP9wn8hMMPNFe7wCcbOwww==.GIF
+*.txt
+*.model
+*.bin
 *.GIF
-=======
-*.GIF
-*.p
-<<<<<<< HEAD
-*.pickle
-=======
->>>>>>> 1d5dd5fd73547b4e91609e039796b15683cd9c53
->>>>>>> 5c7e8a79f374ae3065e547a51631c5b16ed70143
+*.npy
 *.html
+*.pickle

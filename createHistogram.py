@@ -7,10 +7,9 @@ import re
 import os
 from datetime import datetime, timedelta
 from collections import OrderedDict
+from matplotlib.ticker import ScalarFormatter
 
-def createHistogram(inputdf, querystring, inputtimeformat, normalised):
-	df = inputdf
-	timeformat = inputtimeformat
+def createHistogram(df, querystring='', timeformat='months', includenormalised=False):
 	li_timestamps = df['timestamp'].values.tolist()
 	li_timeticks = []
 
@@ -53,7 +52,7 @@ def createHistogram(inputdf, querystring, inputtimeformat, normalised):
 		#print(li_timeticks)
 		count_timestamps = 0
 		month = 0
-		if normalised:
+		if includenormalised:
 			di_totalcomment = {'11-13': 1, '12-13': 61519, '01-14': 1212183, '02-14': 1169314, '03-14': 1057428, '04-14': 1234152, '05-14': 1135162, '06-14': 1195313, '07-14': 1127383, '08-14': 1491844, '09-14': 1738433, '10-14': 1571584, '11-14': 1424278, '12-14': 1441101, '01-15': 909278, '02-15': 772111, '03-15': 890495, '04-15': 1197976, '05-15': 1300518, '06-15': 1381517, '07-15': 1392446, '08-15': 1597274, '09-15': 1903111, '10-15': 23000, '11-15': 26004, '12-15': 2344421, '01-16': 2592275, '02-16': 2925369, '03-16': 3111713, '04-16': 3736528, '05-16': 3048962, '06-16': 3131789, '07-16': 3642871, '08-16': 4314923, '09-16': 3618363, '10-16': 3759066, '11-16': 4418571, '12-16': 5515200, '01-17': 4187400, '02-17': 5191531, '03-17': 4368911, '04-17': 4386181, '05-17': 4428757, '06-17': 4374011, '07-17': 4020058, '08-17': 3752418, '09-17': 4087688, '10-17': 3703119, '11-17': 3931560, '12-17': 4122068,'01-18': 3584861, '02-18': 3624546, '03-18': 3468642}
 
 			li_totalcomments = [1,61519,1212183,1169314,1057428,1234152,1135162,1195313,1127383,1491844,1738433,1571584,1424278,1441101,909278,772111,890495,1197976,1300518,1381517,1392446,1597274,1903111,2000023,2004026,2344421,2592275,2925369,3111713,3736528,3048962,3131789,3642871,4314923,3618363,3759066,4418571,5515200,4187400,5191531,4368911,4386181,4428757,4374011,4020058,3752418,4087688,3703119,3931560,4122068,3584861,3624546,3468642]
@@ -244,7 +243,6 @@ def createHistoFromTfidf(df='', li_words=''):
 	df = df[df['word'].isin([li_words])]
 	df = df.transpose()
 	print(df)
-	quit()
 	df['numbs'] = [x for x in range(len(df))]
 	datelabels = [date for date in df['dateformatted']]
 
@@ -268,12 +266,8 @@ def createHistoFromTfidf(df='', li_words=''):
 
 	if twoaxes:
 		lines2, labels2 = ax2.get_legend_handles_labels()
-		print('do nothing')
 		ax2.legend(lines + lines2, labels + labels2, loc='upper left')
-	# 	lns = ln1 + ln2
-	# 	labs = [l.get_label() for axes in ln1]
 		ax2.set_ylim(bottom=0)
-	# 	ax.legend(lns, labs, loc='upper left')
 	else:
 		ax.legend(loc='upper left')
 
@@ -281,7 +275,116 @@ def createHistoFromTfidf(df='', li_words=''):
 	plt.savefig('tfidf/' + filename + '_trump_tfidf.jpg', dpi='figure')
 	#plt.show()
 
-# df1 = pd.read_csv('substring_mentions/occurrances_trump.csv')
-# df2 = pd.read_csv('substring_mentions/occurrances_nice.csv')
-# df3 = pd.read_csv('substring_mentions/occurrances_would.csv')
-# plotMultipleTrends(df1=df1,df2=df2,df3=df3, query='trump", "nice" and "would', filename='trump_nice_would', twoaxes = False)
+def createThreadMetaHisto(df=''):
+	print('Creating bar chart for thread meta data')
+	#df = df.sort_values(by='amount_of_posts', ascending=True)
+	print(df.head())
+	li_labels = []
+	for count in df['amount_of_posts']:
+		if count == '500':
+			count = '500+'
+			li_labels.append(count)
+		else:
+			li_labels.append(count)
+	print(li_labels)
+
+	fig = plt.figure(figsize=(12, 8))
+	fig.set_dpi(100)
+	ax = fig.add_subplot(111)
+	ax2 = ax.twinx()
+	ax3 = ax.twinx()
+	kwarg = {'position': 1}
+	df.plot(ax=ax, x='amount_of_posts', y='occurrances', kind='bar', label='Threads containing "trump"', position=0.0, legend=False, width=.9, color='#52b6dd');
+	df.plot(ax=ax2, x='amount_of_posts', y='averagetrumps', kind='line', label='Trump count: Average posts with "trump" per thread', legend=False, linewidth=1.2, color='red');
+	df.plot(ax=ax3, x='amount_of_posts', y='averagetrumpdensity', kind='line', label='Trump density: Percentage of total thread posts with "trump"', legend=False, linewidth=1.2, color='orange');
+	plt.title('All threads on 4chan/pol/ containing "trump", separated by thread length')
+
+	ax2.set_ylim(bottom=0, top=25)
+	ax3.set_ylim(bottom=0, top=25)
+
+	ax.grid(color='#e5e5e5',linestyle='dashed', linewidth=.6)
+
+	ax.set_xticklabels(li_labels)
+	#legend
+	# lines, labels = ax.get_legend_handles_labels()
+	# lines2, labels2 = ax2.get_legend_handles_labels()
+	# lines3, labels3 = ax3.get_legend_handles_labels()
+	# ax2.legend(lines + lines2 + lines3, labels + labels2 + labels, loc='upper right')
+	ax.set_xlabel("Amount of posts in thread")
+	ax.set_ylabel('Threads having 1> post(s) containing "trump"', color='#52b6dd')
+	ax2.set_ylabel('Posts containing "trump", average per thread', color='red')
+	ax3.set_ylabel('Percentage of posts containing "trump", per thread', color='orange')
+	ax2.yaxis.set_label_coords(1.06,0.5)
+	
+	plt.show()
+
+def getThreadMetaInfo(df=''):
+	df['thread_count'] = [int(string) for string in df['thread_count']]
+	print(len(df))
+	df = df.sort_values(by='thread_count', ascending=True)
+	print(df.head())
+	print(df['thread_count'])
+
+	di_threadlengths = {}
+	di_average_trumps = {}
+	di_average_trumpdensity = {}
+
+
+	count_500 = 0
+	li_500_trumps = []
+	li_500_trumpdensities = []
+
+	for index, count in enumerate(df['thread_count']):
+		mod_count = count - (count % 10)
+		str_mod_count = str(mod_count)
+		if mod_count >= 500:
+			count_500 += 1
+			li_500_trumps.append(df['trump_count'][index])
+			li_500_trumpdensities.append(df['trump_density'][index])
+		elif str_mod_count in di_threadlengths:
+			di_threadlengths[str_mod_count] += 1
+			di_average_trumps[str_mod_count].append(df['trump_count'][index])
+			di_average_trumpdensity[str_mod_count].append(df['trump_density'][index])
+		else:
+			di_threadlengths[str_mod_count] = 1
+			print(str_mod_count)
+			di_average_trumps[str_mod_count] = []
+			di_average_trumpdensity[str_mod_count] = []
+			di_average_trumps[str_mod_count].append(df['trump_count'][index])
+			di_average_trumpdensity[str_mod_count].append(df['trump_density'][index])
+
+	di_threadlengths['500'] = count_500
+	di_average_trumps['500'] = li_500_trumps
+	di_average_trumpdensity['500'] = li_500_trumpdensities
+
+	#calculate the average trump count and trump density per length of thread ('do longer threads contain more Trumps?')
+	averagetrumps = 0
+	li_averagetrumps = []
+	for key, value in di_average_trumps.items():
+		for av in value:
+			#print(av)
+			averagetrumps += av
+		averagetrumps = (averagetrumps / len(value))
+		#print(averagetrumps)
+		li_averagetrumps.append(averagetrumps)
+	trumpdensities = 0
+	li_trumpdensities = []
+	for key, value in di_average_trumpdensity.items():
+		for av in value:
+			#print(av)
+			trumpdensities += av
+		#print(len(value), trumpdensities)
+		trumpdensities = (trumpdensities / len(value)) * 100
+		#print(trumpdensities)
+		li_trumpdensities.append(trumpdensities)
+
+	df_plot = pd.DataFrame.from_dict(di_threadlengths, orient='index')
+	df_plot.reset_index(level=0, inplace=True)
+	df_plot.columns = ['amount_of_posts','occurrances']
+	df_plot['averagetrumps'] = li_averagetrumps
+	df_plot['averagetrumpdensity'] = li_trumpdensities
+	print(df_plot.head())
+	return df_plot
+
+df = pd.read_csv('substring_mentions/mentions_trump/trump_threads/trump_threads.csv')
+df = df.groupby(['date_month']).agg(['count']
