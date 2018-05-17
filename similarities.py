@@ -22,6 +22,7 @@ from sklearn.manifold import MDS
 from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
 from gensim.models import Word2Vec
+from gensim.models import fasttext
 from gensim.scripts.word2vec2tensor import word2vec2tensor
 from matplotlib import pyplot
 from adjustText import adjust_text
@@ -278,7 +279,18 @@ def getWord2VecModel(train='', load='', modelname='', min_word=200):
 	elif load != '':
 		model = Word2Vec.load(load)
 		return model
-	
+
+def getFastTextModel(train='', load='', modelname='', min_word=200):
+	if train != '':
+		# train model
+		print(train[:10])
+		model = fasttext.FastText(sentences=train, min_count=min_word)
+		# pickle the entire model to disk, so we can load&resume training later
+		return model
+	elif load != '':
+		model = fasttext.load_model(load)
+		return model
+
 def showPCAGraph(model):
 	# use t-sne!
 	# PCA is more effective for 'importance' of words
@@ -372,73 +384,18 @@ def getsimilars(word, month):
 	df_similars['ratio-' + month] = [int((words[1] * 100)) for words in similars]
 	return df_similars
 
-def createTokensOfCsv():
-	#list of list of comments, timeseparated
+#split the words in 'comment' column of csv and return list of tokens
+def createTokensFromCsv(file=''):
 	li_allstrings = []
 
 	folder = 'substring_mentions/mentions_trump/months/'
-	for (dirpath, dirnames, filenames) in os.walk(folder):
-		for filename in filenames:
-			if filename.endswith('.csv'):
-				df = pd.read_csv(folder + filename, encoding='utf-8')
-				li_comments = []
-				for index, comment in enumerate(df['comment']):
-					#remove urls
-					if 'http' in comment:
-						comment = re.sub(r'https?:\/\/.*[\r\n]*', ' ', comment)
-					if 'www.' in comment:
-						comment = re.sub(r'www.*[\r\n]*', ' ', comment)
-					#remove general threads because they clutter the dataset with copy-pastas
-					if 'general' not in df['title'][index].lower():
-						# print('General thread, discarded')
-						# print(df['title'][index])
-						li_comments.append(comment)
-				li_comments = ' '.join(li_comments)
-				print(filename)
-				li_allstrings.append(li_comments)
+	df = pd.read.csv(file, encoding='utf-8')
+	for comment in df['comment']:
+		comment = ' '.join(comment)
+		li_allstrings.append(li_comments)
 	return li_allstrings
-	#print(li_allstrings[:10])
-	# for li_str_months in li_allstrings:
-	# 	month_tokens = getTokens(li_strings=li_str_months, similaritytype='docs', stems=True)
 
-#tokens = createTokensOfCsv()
-
-# df_trumpthreads = pd.read_csv('substring_mentions/mentions_trump/trump_threads/trump_threads_15percent_30min.csv', encoding='utf-8')
-# li_strings = df_trumpthreads['comment'].tolist()
-# df_trumpthreads = ''
-
-#both a stemmed and non-stemmed version
-# words_stemmed = getTokens(li_strings, stemming=True)
-# pickle.dump(words_stemmed, open('substring_mentions/mentions_trump/trump_threads/trump_threads_tokens_15percent_30min_stemmed.p', 'wb'))
-# model = getWord2VecModel(train=words_stemmed, modelname='model_trump_threads_15percent_30min_stemmed')
-
-# pickle.dump(words_stemmed, open('substring_mentions/mentions_trump/trump_threads/trump_threads_tokens_15percent_30min.p', 'wb'))
-
-#words_stemmed = pickle.load(open('substring_mentions/mentions_trump/trump_threads/trump_threads_tokens_15percent_30min_stemmed.p', 'rb'))
-# model = getWord2VecModel(load='word2vec/models/w2v_model_all-05-2017.model')
-# print(model.most_similar(positive=['kekistan']))
-# model = getWord2VecModel(load='word2vec/models/w2v_model_all-06-2017.model')
-# print(model.most_similar(positive=['kekistan'], topn=30))
-# model = getWord2VecModel(load='word2vec/models/w2v_model_all-07-2017.model')
-# print(model.most_similar(positive=['kekistan']))
-# model = getWord2VecModel(load='word2vec/models/w2v_model_all-08-2017.model')
-# print(model.most_similar(positive=['kekistan']))
-
-# df_trumpthreads = pd.read_csv('substring_mentions/mentions_trump/trump_threads/trump_threads_15percent_30min.csv', engine='python', encoding='utf-8')
-# dates = df_trumpthreads['date_month'].unique()
-# for month in dates:
-# 	print('Creating DataFrame and stemming for ' + month)
-# 	df_month = df_trumpthreads[df_trumpthreads['date_month'] == month]
-# 	df_month.to_csv('substring_mentions/mentions_trump/trump_threads/trump_threads_15percent_30min_' + month + '.csv', encoding='utf-8')
-# 	li_strings = df_month['comment'].tolist()
-# 	words_stemmed = getTokens(li_strings, stemming=True)
-# 	pickle.dump(words_stemmed, open('substring_mentions/mentions_trump/trump_threads/trump_threads_tokens_15percent_30min_stemmed_' + month + '.p', 'wb'))
-# 	model = getWord2VecModel(train=li_strings, modelname='model_trump_threads_15percent_30min_stemmed' + month)
-
-# folder = 'substring_mentions/mentions_trump/trump_threads/months/'
-# for root, dirs, files in os.walk(folder):
-# 	for filename in files:
-# 		print(filename)
-# 		words_stemmed = pickle.load(open(folder + filename, 'rb'))
-# 		model = getWord2VecModel(train=words_stemmed, modelname='trumpthreads/model_' + filename)
-# 		getTsneScatterPlot(model, plotname='model_trump_threads_15percent_30min_200minword_stemmed' + filename)
+li_strings = pickle.load(open('substring_mentions/pickle_all-01-2016.p', 'rb'))
+li_strings = li_strings[:5000]
+model = getFastTextModel(train=li_strings)
+print(model['trump'])
