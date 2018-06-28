@@ -5,193 +5,115 @@ import matplotlib.pyplot as plt
 import time
 import re
 import os
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from collections import OrderedDict
 from matplotlib.ticker import ScalarFormatter
 
+di_totalcomment = {'2013-11': 63253, '2013-12': 1212205, '2014-01': 1169258, '2014-02': 1057543, '2014-03': 1236363, '2014-04': 1134904, '2014-05': 1194819, '2014-06': 1128180, '2014-07': 1492018, '2014-08': 1738454, '2014-09': 1572138, '2014-10': 1421393, '2014-11': 1441428, '2014-12': 907683, '2015-01': 772383, '2015-02': 890712, '2015-03': 1200995, '2015-04': 1301615, '2015-05': 1380384, '2015-06': 1392750, '2015-07': 1597596, '2015-08': 1904887, '2015-09': 1999249, '2015-10': 2000277, '2015-11': 2345632, '2015-12': 2593167, '2016-01': 2925801, '2016-02': 3112525, '2016-03': 3741424, '2016-04': 3049187, '2016-05': 3132968, '2016-06': 3641258, '2016-07': 4316283, '2016-08': 3619256, '2016-09': 3758381, '2016-10': 4413689, '2016-11': 5515133, '2016-12': 4186594, '2017-01': 5196683, '2017-02': 4365082, '2017-03': 4390319, '2017-04': 4430969, '2017-05': 4372821, '2017-06': 4018824, '2017-07': 3752927, '2017-08': 4087255, '2017-09': 3701459, '2017-10': 3928384, '2017-11': 4121087, '2017-12': 3584879, '2018-01': 3625070, '2018-02': 3468140, '2018-03': 2125521}
+
+li_totalcomments = [63253, 1212205, 1169258, 1057543, 1236363, 1134904, 1194819, 1128180, 1492018, 1738454, 1572138, 1421393, 1441428, 907683, 772383, 890712, 1200995, 1301615, 1380384, 1392750, 1597596, 1904887, 1999249, 2000277, 2345632, 2593167, 2925801, 3112525, 3741424, 3049187, 3132968, 3641258, 4316283, 3619256, 3758381, 4413689, 5515133, 4186594, 5196683, 4365082, 4390319, 4430969, 4372821, 4018824, 3752927, 4087255, 3701459, 3928384, 4121087, 3584879, 3625070, 3468140, 2125521]
+
+di_totalthreads = {'2013-09': 1, '2013-11': 1514, '2013-12': 28827, '2014-01': 27537, '2014-02': 24338, '2014-03': 26086, '2014-04': 25917, '2014-05': 25909, '2014-06': 24301, '2014-07': 32147, '2014-08': 34295, '2014-09': 33908, '2014-10': 29955, '2014-11': 29313, '2014-12': 46547, '2015-01': 19692, '2015-02': 21520, '2015-03': 30041, '2015-04': 31505, '2015-05': 33098, '2015-06': 37833, '2015-07': 40682, '2015-08': 48558, '2015-09': 54562, '2015-10': 51533, '2015-11': 66440, '2015-12': 73255, '2016-01': 78008, '2016-02': 80849, '2016-03': 98149, '2016-04': 78861, '2016-05': 82652, '2016-06': 94564, '2016-07': 104147, '2016-08': 96223, '2016-09': 101897, '2016-10': 133773, '2016-11': 191605, '2016-12': 115409, '2017-01': 134600, '2017-02': 113708, '2017-03': 113349, '2017-04': 121685, '2017-05': 117634, '2017-06': 96822, '2017-07': 95565, '2017-08': 111826, '2017-09': 88076, '2017-10': 94396, '2017-11': 95713, '2017-12': 85371, '2018-01': 85360, '2018-02': 83711, '2018-03': 50395}
+
+li_totalthreads = [1, 1514, 28827, 27537, 24338, 26086, 25917, 25909, 24301, 32147, 34295, 33908, 29955, 29313, 46547, 19692, 21520, 30041, 31505, 33098, 37833, 40682, 48558, 54562, 51533, 66440, 73255, 78008, 80849, 98149, 78861, 82652, 94564, 104147, 96223, 101897, 133773, 191605, 115409, 134600, 113708, 113349, 121685, 117634, 96822, 95565, 111826, 88076, 94396, 95713, 85371, 85360, 83711, 50395]
+
 def createHistogram(df, querystring='', timeformat='months', includenormalised=False):
-	li_timestamps = df['timestamp'].values.tolist()
+	li_dates = df['date_full'].values.tolist()
 	li_timeticks = []
 
 	dateformat = '%d-%m-%y'
 
+	df_histo = pd.DataFrame()
+
+	if timeformat == 'months':
+		df['date_histo'] = [date[:7] for date in df['date_full']]
+		df = df.groupby(by=['date_histo']).agg(['count'])
+		print(df)
+
+	elif timeformat == 'days':
+		df['date_histo'] = [date[:10] for date in df['date_full']]
+		df = df.groupby(by=['date_histo']).agg(['count'])
+		print(df)
+
+	#create new list of all dates between start and end date
+	#sometimes one date has zero counts, and gets skipped by matplotlib
+	li_dates = []
+	if timeformat == 'months':
+		d1 = datetime.strptime(df.index[0], "%Y-%m").date()  # start date
+		d2 = datetime.strptime(df.index[len(df) - 1], "%Y-%m").date()  # end date
+		print(d1, d2)
+		delta = d2 - d1         # timedelta
+		for i in range(delta.days + 1):
+			date = d1 + timedelta(days=i)
+			date = str(date)[:7]
+			if date not in li_dates:
+				li_dates.append(date)
+		print(li_dates)
 	if timeformat == 'days':
-		one_day = timedelta(days = 1)
-		startdate = datetime.fromtimestamp(li_timestamps[0])
-		enddate = datetime.fromtimestamp(li_timestamps[len(li_timestamps) - 1])
-		delta =  enddate - startdate
-		print(startdate)
-		print(enddate)
-		count_days = delta.days + 2
-		print(count_days)
-		for i in range((enddate-startdate).days + 1):
-		    li_timeticks.append(startdate + (i) * one_day)
-		dateformat = '%d-%m-%y'
-		#convert UNIX timespamp
-		mpl_dates = matplotlib.dates.epoch2num(li_timestamps)
-		timebuckets = matplotlib.dates.date2num(li_timeticks)
+		d1 = datetime.strptime(df.index[0], "%Y-%m-%d").date()  # start date
+		d2 = datetime.strptime(df.index[len(df) - 1], "%Y-%m-%d").date()  # end date
+		print(d1, d2)
+		delta = d2 - d1         # timedelta
+		for i in range(delta.days + 1):
+			li_dates.append(d1 + timedelta(days=i))
 
-	elif timeformat == 'months':
-		#one_month = datetime.timedelta(month = 1)
-		startdate = (datetime.fromtimestamp(li_timestamps[0])).strftime("%Y-%m-%d")
-		enddate = (datetime.fromtimestamp(li_timestamps[len(li_timestamps) - 1])).strftime("%Y-%m-%d")
-		dates = [str(startdate), str(enddate)]
-		start, end = [datetime.strptime(_, "%Y-%m-%d") for _ in dates]
-		total_months = lambda dt: dt.month + 12 * dt.year
-		li_timeticks = []
-		for tot_m in range(total_months(start) - 1, total_months(end)):
-			y, m = divmod(tot_m, 12)
-			li_timeticks.append(datetime(y, m + 1, 1).strftime("%m-%y"))
-		#print(li_timeticks)
-		dateformat = '%m-%y'
-		mpl_dates = matplotlib.dates.epoch2num(li_timestamps)
-		
-		timebuckets = [datetime.strptime(i, "%m-%y") for i in li_timeticks]
-		timebuckets = matplotlib.dates.date2num(timebuckets)
+	#create list of counts. 0 if it does not appears in previous DataFrame
+	li_counts = [0 for i in range(len(li_dates))]
+	for index, indate in enumerate(li_dates):
+		if indate in df.index.values and df.loc[indate][1] > 0:
+			li_counts[index] = df.loc[indate][1]
 
-		#print(li_timeticks)
-		count_timestamps = 0
-		month = 0
-		if includenormalised:
-			di_totalcomment = {'11-13': 1, '12-13': 61519, '01-14': 1212183, '02-14': 1169314, '03-14': 1057428, '04-14': 1234152, '05-14': 1135162, '06-14': 1195313, '07-14': 1127383, '08-14': 1491844, '09-14': 1738433, '10-14': 1571584, '11-14': 1424278, '12-14': 1441101, '01-15': 909278, '02-15': 772111, '03-15': 890495, '04-15': 1197976, '05-15': 1300518, '06-15': 1381517, '07-15': 1392446, '08-15': 1597274, '09-15': 1903111, '10-15': 23000, '11-15': 26004, '12-15': 2344421, '01-16': 2592275, '02-16': 2925369, '03-16': 3111713, '04-16': 3736528, '05-16': 3048962, '06-16': 3131789, '07-16': 3642871, '08-16': 4314923, '09-16': 3618363, '10-16': 3759066, '11-16': 4418571, '12-16': 5515200, '01-17': 4187400, '02-17': 5191531, '03-17': 4368911, '04-17': 4386181, '05-17': 4428757, '06-17': 4374011, '07-17': 4020058, '08-17': 3752418, '09-17': 4087688, '10-17': 3703119, '11-17': 3931560, '12-17': 4122068,'01-18': 3584861, '02-18': 3624546, '03-18': 3468642}
+	print(li_counts)
+	df_histo['date'] = li_dates
+	df_histo['count'] = li_counts
 
-			li_totalcomments = [1,61519,1212183,1169314,1057428,1234152,1135162,1195313,1127383,1491844,1738433,1571584,1424278,1441101,909278,772111,890495,1197976,1300518,1381517,1392446,1597274,1903111,2000023,2004026,2344421,2592275,2925369,3111713,3736528,3048962,3131789,3642871,4314923,3618363,3759066,4418571,5515200,4187400,5191531,4368911,4386181,4428757,4374011,4020058,3752418,4087688,3703119,3931560,4122068,3584861,3624546,3468642]
+	#create list of average countrs
+	li_av_count = []
+	for i in range(len(df_histo)):
+		av_count = (df_histo['count'][i] / di_totalcomment[df_histo['date'][i]]) * 100
+		li_av_count.append(av_count)
 
-		#print(mpl_dates)
-		#print(timebuckets)
+	df_histo['av_count'] = li_av_count
+
+	# remove march 2018
+	print(df_histo['date'][len(df_histo) - 1])
+	if timeformat == 'months' and df_histo['date'][len(df_histo) - 1] == '2018-03':
+		df_histo.drop([len(df_histo) - 1], inplace=True)
+
+	print(df_histo)
+	df_histo.to_csv('substring_mentions/occurrances_' + querystring + '.csv', index=False)
 
 	# plot it
 	fig, ax = plt.subplots(1,1)
-	ax.hist(mpl_dates, bins=timebuckets, align="left", color='red', ec="k")
-	histo = ax.hist(mpl_dates, bins=timebuckets, align="left", color='red', ec="k")
+	fig = plt.figure(figsize=(12, 8))
+	fig.set_dpi(100)
+	ax = fig.add_subplot(111)
 
+	ax2 = ax.twinx()
 	if timeformat == 'days':
 		ax.xaxis.set_major_locator(matplotlib.dates.DayLocator())
 		ax.xaxis.set_major_formatter(matplotlib.dates.DateFormatter(dateformat))
 	elif timeformat == 'months':
 		ax.xaxis.set_major_locator(matplotlib.dates.MonthLocator())
 		ax.xaxis.set_major_formatter(matplotlib.dates.DateFormatter(dateformat))
-
-	#hide every N labels
-	for label in ax.xaxis.get_ticklabels()[::2]:
-		label.set_visible(False)
-
-	#set title
-	ax.set_title('4chan/pol/ comments containing "' + querystring + '", ' + str(startdate) + ' - ' + str(enddate))
-
-	#rotate labels
-	plt.gcf().autofmt_xdate()
-	plt.savefig('../visualisationsold/' + querystring + '_full.svg')
-	# plt.show(block=False)
-	# time.sleep(2)
-	plt.close()
-
-	newli_timeticks = list(di_totalcomment.keys())
-	#print(len(newli_timeticks))
-
-	li_counts = []
-	#print(ax.xaxis.get_ticklabels())
-	li_axisticks = ax.xaxis.get_majorticklabels()
-	li_axisticks = li_axisticks[:-3]
-	li_axisticks = li_axisticks[3:]
-	#print(li_axisticks)
-	li_matchticks = []
-	for text in li_axisticks:
-		strtext = text.get_text()
-		li_matchticks.append(strtext)
-	print(len(li_matchticks))
-	print('matching months: ' + str(li_matchticks))
-
-	#print('histo data:')
-	#print(histo)
-
-	#loop over each month
-	histoindex = 0
-	for month in range(53):
-		occurance = False
-		for registeredmonth in li_matchticks:
-			#print(registeredmonth)
-			if registeredmonth == newli_timeticks[month]:
-				print('Month ' + str(histoindex) + ' found')
-				li_counts.append(histo[0][histoindex])
-				histoindex = histoindex + 1
-				occurance = True
-		if occurance == False:						#if the string did not occur, write 0
-			print('no occurances this month')
-			li_counts.append(0)
+	ax.get_yaxis().set_major_formatter(plt.FuncFormatter(lambda x, loc: "{:,}".format(int(x))))
 	
-	print('li_counts length: ' + str(len(li_counts)))
-
-	li_normalisedcounts = []
-	for index, count in enumerate(li_counts):
-		#print(li_totalcomments[index])
-		count_normalised = (count / li_totalcomments[index]) * 100
-		#print(count_normalised)
-		li_normalisedcounts.append(count_normalised)
-
-	li_datesformatted = []
-	li_histodates = []
-	for date in newli_timeticks:
-		dateobject = datetime.strptime(date, '%m-%y')
-		formatteddate = datetime.strftime(dateobject, '%Y-%b')
-		histodate = datetime.strftime(dateobject, '%b %y')
-		li_datesformatted.append(formatteddate)
-		li_histodates.append(histodate)
-
-	print('Writing results to csv')
-
-	# only keep months that have full data
-	del newli_timeticks[0]
-	del li_datesformatted[0]
-	del li_histodates[0]
-	del li_normalisedcounts[0]
-	del li_counts[0]
-	del newli_timeticks[len(newli_timeticks) - 1]
-	del li_histodates[len(li_histodates) - 1]
-	del li_normalisedcounts[len(li_normalisedcounts) - 1]
-	del li_counts[len(li_counts) - 1]
-	del li_datesformatted[len(li_datesformatted) - 1]
-
-	print(li_datesformatted)
-	print(len(newli_timeticks))
-	print(len(li_datesformatted))
-	print(len(li_normalisedcounts))
-	print(len(li_counts))
-
-	finaldf = pd.DataFrame(columns=['date','dateformatted','count','percentage'])
-	finaldf['date'] = newli_timeticks
-	finaldf['dateformatted'] = li_datesformatted
-	finaldf['percentage'] = li_normalisedcounts
-	finaldf['count'] = li_counts
-	finaldf.to_csv('substring_mentions/occurrances_' + querystring + '.csv', index=False)
-
-	df2 = pd.DataFrame(index=li_histodates[1:], columns=['count','percentage'])
-	df2['dates'] = li_histodates[1:]
-	df2['count'] = li_counts[1:]
-	df2['percentage'] = li_normalisedcounts[1:]
-	plotNewGraph(df2, querystring)
-
-def plotNewGraph(df, query):
-
-	fig = plt.figure(figsize=(12, 8))
-	fig.set_dpi(100)
-	ax1 = fig.add_subplot(111)
-	ax2 = ax1.twinx()
-
-	df.plot(ax=ax1, y='count', kind='bar', legend=False, width=.9, color='#52b6dd');
-	df.plot(ax=ax2, y='percentage', legend=False, kind='line', linewidth=2, color='#d12d04');
-	ax1.set_axisbelow(True)
-	ax1.set_xticklabels(df['dates'])
-	ax1.grid(color='#e5e5e5',linestyle='dashed', linewidth=.6)
-	ax1.set_ylabel('Absolute amount', color='#52b6dd')
+	df_histo.plot(ax=ax, y='count', kind='bar', legend=False, width=.9, color='#52b6dd');
+	df_histo.plot(ax=ax2, y='av_count', legend=False, kind='line', linewidth=2, color='#d12d04');
+	ax.set_axisbelow(True)
+	# ax.set_xticks(xticks)
+	ax.set_xticklabels(df_histo['date'], rotation='vertical')
+	ax.grid(color='#e5e5e5',linestyle='dashed', linewidth=.6)
+	ax.set_ylabel('Absolute amount', color='#52b6dd')
 	ax2.set_ylabel('Percentage of total comments', color='#d12d04')
 	ax2.set_ylim(bottom=0)
-	plt.title('Amount of 4chan/pol/ comments containing "' + query + '"')
+	plt.title('Amount of 4chan/pol/ comments containing "' + querystring + '"')
 
-	plt.savefig('../visualisations/substring_counts/' + query + '.svg', dpi='figure')
-	plt.savefig('../visualisations/substring_counts/' + query + '.jpg', dpi='figure')
+	plt.savefig('../visualisations/substring_counts/svg/' + querystring + '.svg', dpi='figure',bbox_inches='tight')
+	plt.savefig('../visualisations/substring_counts/jpg/' + querystring + '.jpg', dpi='figure',bbox_inches='tight')
 
 def plotMultipleTrends(df1=None,df2=None,df3=None, query='', filename='', twoaxes=False):
+	#takes multiple words and plots the occurance of these.
 	df_1 = df1.loc[1:].reset_index()
 	print(df1)
 	print(df_1)
@@ -235,8 +157,8 @@ def plotMultipleTrends(df1=None,df2=None,df3=None, query='', filename='', twoaxe
 	else:
 		ax.legend(loc='upper left')
 
-	plt.savefig('../visualisations/substring_counts/' + filename + '_multiple.svg', dpi='figure')
-	plt.savefig('../visualisations/substring_counts/' + filename + '_multiple.jpg', dpi='figure')
+	plt.savefig('../visualisations/substring_counts/' + filename + '_multiple.svg', dpi='figure',bbox_inches='tight')
+	plt.savefig('../visualisations/substring_counts/' + filename + '_multiple.jpg', dpi='figure',bbox_inches='tight')
 	#plt.show()
 
 def createHistoFromTfidf(df='', li_words=''):
@@ -271,8 +193,8 @@ def createHistoFromTfidf(df='', li_words=''):
 	else:
 		ax.legend(loc='upper left')
 
-	plt.savefig('tfidf/' + filename + '_trump_tfidf.svg', dpi='figure')
-	plt.savefig('tfidf/' + filename + '_trump_tfidf.jpg', dpi='figure')
+	plt.savefig('tfidf/' + filename + '_trump_tfidf.svg', dpi='figure',bbox_inches='tight')
+	plt.savefig('tfidf/' + filename + '_trump_tfidf.jpg', dpi='figure',bbox_inches='tight')
 	#plt.show()
 
 def createThreadMetaHisto(df=''):
@@ -386,5 +308,158 @@ def getThreadMetaInfo(df=''):
 	print(df_plot.head())
 	return df_plot
 
-df = pd.read_csv('substring_mentions/mentions_trump/trump_threads/trump_threads.csv')
-df = df.groupby(['date_month']).agg(['count']
+def createThreadsHisto(inputdf=''):
+	#create a histogram showing the amount of comments in a word-dense thread
+	#make a counted df first and use it as the input df (with: df.groupby(['column']).agg('count'))
+
+	df = pd.read_csv(inputdf)
+	li_av_count = []
+	df = df[16:]
+	df.drop_duplicates(subset=['thread_num'], inplace=True)
+	df = df.groupby(['date_month']).agg('count')
+	print(df.head())
+	df.reset_index(inplace=True)
+
+	#create average thread occurance
+	# for index, count in enumerate(df['num']):
+	# 	av_count = ((float(count) / float(li_totalthreads[19 + index])) * 100)
+	# 	print(av_count)
+	# 	li_av_count.append(float(av_count))
+
+	#create list of average countrs
+	li_av_count = []
+	for i in range(len(df)):
+		av_count = (df['num'][i] / di_totalthreads[df['date_month'][i]]) * 100
+		li_av_count.append(av_count)
+
+	df['average_count'] = li_av_count
+	df['count'] = pd.to_numeric(df['num'])
+	df = df[:-1]
+	print(df[:100])
+	df.to_csv(inputdf[-4:] + '_counts.csv', encoding='utf-8')
+
+	li_labels = df['date_month']
+	fig = plt.figure(figsize=(12, 8))
+	fig.set_dpi(100)
+	ax = fig.add_subplot(111)
+	print(type(df['count'][5]))
+
+	df.plot(ax=ax, y='count', kind='bar', label='Amount of Trump-dense threads', position=0.5, legend=False, width=.9, color='#52b6dd');
+	ax2 = ax.twinx()
+	ax2.plot(li_av_count, color='#d12d04')
+	plt.title('Amount of Trump-dense threads')
+	ax.set_xticklabels(li_labels)
+	ax.set_ylim(bottom=0)
+	ax2.set_ylim(bottom=0)
+	ax.grid(color='#e5e5e5',linestyle='dashed', linewidth=.6)
+	ax.set_ylabel('Absolute amount of Trump-dense threads', color='#52b6dd')
+	ax.get_yaxis().set_major_formatter(plt.FuncFormatter(lambda x, loc: "{:,}".format(int(x))))
+
+	ax2.set_ylabel('Percentage of total threads', color='#d12d04')
+	plt.show()
+
+# df= "substring_mentions/mentions_trump/trump_threads/trump_threads_15percent_30min.csv"
+# createThreadsHisto(inputdf=df)
+
+def createThreadsCommentHisto(inputdf=''):
+	#create a histogram showing the amount of comments in a word-dense thread
+	#make a counted df first and use it as the input df (with: df.groupby(['column'].agg('count')))
+
+	df = pd.read_csv(inputdf)
+	df = df[3:]
+	print(df.head())
+	li_av_count = []
+	#create average counts between the total comments of threads and total comments on entire board
+	for index, count in enumerate(df['num']):
+		av_count = ((float(count) / float(li_totalcomments[16 + index])) * 100)
+		print(av_count)
+		li_av_count.append(float(av_count))
+
+	df_histo['av_count'] = li_av_count
+	df['average_count'] = li_av_count
+	df['num'] = pd.to_numeric(df['num'])
+	df = df[:-1]
+	print(df[:100])
+	df.to_csv(inputdf[-4:] + '_counts.csv', encoding='utf-8')
+
+	li_labels = df['date_month']
+	fig = plt.figure(figsize=(12, 8))
+	fig.set_dpi(100)
+	ax = fig.add_subplot(111)
+	print(type(df['num'][5]))
+
+	df.plot(ax=ax, y='num', kind='bar', label='Posts in Trump-dense threads', position=0.5, legend=False, width=.9, color='#52b6dd');
+	ax2 = ax.twinx()
+	ax2.plot(li_av_count, color='#d12d04')
+	plt.title('Amount of posts in Trump-dense threads')
+	ax.set_xticklabels(li_labels)
+	ax.set_ylim(bottom=0)
+	ax2.set_ylim(bottom=0, top=42.8)
+	ax.grid(color='#e5e5e5',linestyle='dashed', linewidth=.6)
+	ax.set_ylabel('Absolute amount of posts in Trump-dense threads', color='#52b6dd')
+
+	ax2.set_ylabel('Percentage of total comments', color='#d12d04')
+	plt.show()
+
+def createCosineDistHisto(di_cos_dist, word1, word2):
+	# requires an orderd dict of with time as key, and cosine distance as value. Is called in similarities.getW2vCosineDistance()
+	x = [i for i in range(len(di_cos_dist))]
+	print(x)
+	y = di_cos_dist.values()
+	print(y)
+	labels = [key for key, value in di_cos_dist.items()]
+	print(labels)
+	fig = plt.figure(figsize=(11, 8))
+	fig.set_dpi(100)
+	ax = fig.add_subplot(111)
+	ax.plot(x, y)
+	#ax.set_ylim()
+	ax.set_xlim(left=0, right=0)
+	ax.set_xticks(x)
+	ax.set_xticklabels(labels, rotation='vertical')
+	ax.grid(color='#e5e5e5',linestyle='dashed', linewidth=.6)
+	ax.set_ylabel('Cosine distance')
+
+	plt.title('Word2vec cosine distance between "' + word1 + '" and "' + word2 + '"')
+	# plt.show()
+	if '/' in word2:
+		word2 = re.sub('/', '', word2)
+	plt.savefig('../visualisations/w2v_cosine_distance/w2v_cos_dist_' + word1 + '-' + word2 + '.png', dpi='figure',bbox_inches='tight')
+	plt.savefig('../visualisations/w2v_cosine_distance/w2v_cos_dist_' + word1 + '-' + word2 + '.svg', dpi='figure',bbox_inches='tight')
+
+def getAllActivityHisto(threads=False):
+	ordi_totalcomments = OrderedDict([('2013-12', 1212205),('2014-01', 1169258),('2014-02', 1057543),('2014-03', 1236363),('2014-04', 1134904),('2014-05', 1194819),('2014-06', 1128180),('2014-07', 1492018),('2014-08', 1738454),('2014-09', 1572138),('2014-10', 1421393),('2014-11', 1441428),('2014-12', 907683),('2015-01', 772383),('2015-02', 890712),('2015-03', 1200995),('2015-04', 1301615),('2015-05', 1380384),('2015-06', 1392750),('2015-07', 1597596),('2015-08', 1904887),('2015-09', 1999249),('2015-10', 2000277),('2015-11', 2345632),('2015-12', 2593167),('2016-01', 2925801),('2016-02', 3112525),('2016-03', 3741424),('2016-04', 3049187),('2016-05', 3132968),('2016-06', 3641258),('2016-07', 4316283),('2016-08', 3619256),('2016-09', 3758381),('2016-10', 4413689),('2016-11', 5515133),('2016-12', 4186594),('2017-01', 5196683),('2017-02', 4365082),('2017-03', 4390319),('2017-04', 4430969),('2017-05', 4372821),('2017-06', 4018824),('2017-07', 3752927),('2017-08', 4087255),('2017-09', 3701459),('2017-10', 3928384),('2017-11', 4121087),('2017-12', 3584879),('2018-01', 3625070),('2018-02', 3468140)])
+
+	ordi_totalthreads = OrderedDict([('2013-12', 28827), ('2014-01', 27537), ('2014-02', 24338), ('2014-03', 26086), ('2014-04', 25917), ('2014-05', 25909), ('2014-06', 24301), ('2014-07', 32147), ('2014-08', 34295), ('2014-09', 33908), ('2014-10', 29955), ('2014-11', 29313), ('2014-12', 46547), ('2015-01', 19692), ('2015-02', 21520), ('2015-03', 30041), ('2015-04', 31505), ('2015-05', 33098), ('2015-06', 37833), ('2015-07', 40682), ('2015-08', 48558), ('2015-09', 54562), ('2015-10', 51533), ('2015-11', 66440), ('2015-12', 73255), ('2016-01', 78008), ('2016-02', 80849), ('2016-03', 98149), ('2016-04', 78861), ('2016-05', 82652), ('2016-06', 94564), ('2016-07', 104147), ('2016-08', 96223), ('2016-09', 101897), ('2016-10', 133773), ('2016-11', 191605), ('2016-12', 115409), ('2017-01', 134600), ('2017-02', 113708), ('2017-03', 113349), ('2017-04', 121685), ('2017-05', 117634), ('2017-06', 96822), ('2017-07', 95565), ('2017-08', 111826), ('2017-09', 88076), ('2017-10', 94396), ('2017-11', 95713), ('2017-12', 85371), ('2018-01', 85360), ('2018-02', 83711)])
+	
+	if threads == False:
+		ordi = ordi_totalcomments
+		str_label = 'posts'
+	else:
+		ordi = ordi_totalthreads
+		str_label = 'threads'
+
+	x = [i for i in range(len(ordi))]
+	print(x)
+	y = ordi.values()
+	print(y)
+	labels = [key for key, value in ordi.items()]
+	print(labels)
+	fig = plt.figure(figsize=(11, 8))
+	fig.set_dpi(100)
+	ax = fig.add_subplot(111)
+	ax.bar(x, y)
+	ax.get_yaxis().set_major_formatter(plt.FuncFormatter(lambda x, loc: "{:,}".format(int(x))))
+	ax.set_ylim(bottom=0)
+	plt.xlim(-0.5,len(x)-.5)
+	ax.set_xticks(x)
+	ax.set_xticklabels(labels, rotation='vertical')
+	ax.grid(color='#e5e5e5',linestyle='dashed', linewidth=.6)
+	ax.set_ylabel('Total amount of ' + str_label)
+	for label in ax.xaxis.get_ticklabels()[::2]:
+		label.set_visible(False)
+	plt.title('Total amount of ' + str_label + ' on 4chan/pol/')
+	# plt.show()
+	plt.savefig('../visualisations/total_activity_' + str_label + '.png', dpi='figure',bbox_inches='tight')
+	plt.savefig('../visualisations/total_activity_' + str_label + '.svg', dpi='figure',bbox_inches='tight')
+
