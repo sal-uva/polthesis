@@ -1,0 +1,4 @@
+gensim
+mpld3
+adjustText
+nltk
