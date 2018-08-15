@@ -58,7 +58,7 @@ def substringFilter(querystring='all', querystring2 = '', histogram = False, min
 		#look for string in subject
 		elif stringintitle == True:
 			print('Beginning SQL query for "' + querystring + '" in title')
-			df = pd.read_sql_query("SELECT timestamp, date_full, comment, title, num FROM pol_content WHERE lower(comment) LIKE ?;", conn, params=['%' + querystring + '%'])
+			df = pd.read_sql_query("SELECT timestamp, date_full, comment, title, num FROM pol_content WHERE lower(title) LIKE ?;", conn)
 		#look for sting in comment body (default)
 		# print()
 		elif len(querystring2) > 0:
@@ -66,14 +66,14 @@ def substringFilter(querystring='all', querystring2 = '', histogram = False, min
 			df = pd.read_sql_query("SELECT timestamp, date_full, title, comment, num FROM pol_content WHERE ((lower(comment) LIKE ?) AND (lower(comment) LIKE ?));", conn, params=['%' + querystring + '%', '%' + querystring2 + '%'])
 		else:
 			print('Beginning SQL query for "' + querystring + '" in post body')
-			df = pd.read_sql_query("SELECT timestamp, date_full, title, comment, num FROM pol_content WHERE lower(title) LIKE ?;", conn, params=['%' + querystring + '%'])
+			df = pd.read_sql_query("SELECT timestamp, date_full, title, comment, num FROM pol_content WHERE lower(comment) LIKE ?;", conn, params=['%' + querystring + '%'])
 
-		# print('Writing results to csv')
-		# if '/' in querystring:
-		# 	querystring = re.sub(r'/', '', querystring)
-		# else:
-		# 	querystring = querystring
-		# df.to_csv('substring_mentions/mentions_' + querystring + '.csv')
+		print('Writing results to csv')
+		if '/' in querystring:
+			querystring = re.sub(r'/', '', querystring)
+		else:
+			querystring = querystring
+		df.to_csv('substring_mentions/mentions_' + querystring + '.csv')
 	else:
 		df = pd.read_csv('substring_mentions/mentions_trump/trump_threads/trump_threads_15percent_30min.csv', encoding='utf-8')
 
@@ -225,3 +225,9 @@ def getTrumpThreads(querystring='', getdf=True, maketables=False, getMetaInfo=Fa
 					""",conn)
 		print(df_trumpthreads_meta[:50])
 
+
+wordli = ['qanon','great awakening']
+for word in wordli:
+	substringFilter(word, histogram=True)
+
+# substringFilter('trump general', stringintitle=True, histogram=True)

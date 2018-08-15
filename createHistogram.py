@@ -109,8 +109,8 @@ def createHistogram(df, querystring='', timeformat='months', includenormalised=F
 	ax2.set_ylim(bottom=0)
 	plt.title('Amount of 4chan/pol/ comments containing "' + querystring + '"')
 
-	plt.savefig('../visualisations/substring_counts/svg/' + querystring + '.svg', dpi='figure',bbox_inches='tight')
-	plt.savefig('../visualisations/substring_counts/jpg/' + querystring + '.jpg', dpi='figure',bbox_inches='tight')
+	# plt.savefig('../visualisations/substring_counts/svg/' + querystring + '.svg', dpi='figure',bbox_inches='tight')
+	plt.savefig('../visualisations/substring_counts/final/' + querystring + '.jpg', dpi='figure',bbox_inches='tight')
 
 def plotMultipleTrends(df1=None,df2=None,df3=None, query='', filename='', twoaxes=False):
 	#takes multiple words and plots the occurance of these.
