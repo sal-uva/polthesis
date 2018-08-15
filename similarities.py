@@ -13,6 +13,7 @@ from createHistogram import createCosineDistHisto
 #import glove_python
 from matplotlib.font_manager import FontProperties
 from nltk.stem.snowball import SnowballStemmer
+from nltk.stem.wordnet import WordNetLemmatizer
 from nltk.corpus import stopwords
 from scipy.interpolate import spline
 from datetime import datetime, timedelta
@@ -39,7 +40,7 @@ li_labels_months = ['06-15', '07-15', '08-15', '09-15', '10-15', '11-15', '12-15
 
 li_filenames_weeks = ['2015-26', '2015-27', '2015-28', '2015-29', '2015-30', '2015-31', '2015-32', '2015-33', '2015-34', '2015-35', '2015-36', '2015-37', '2015-38', '2015-39', '2015-40', '2015-41', '2015-42', '2015-43', '2015-44', '2015-45', '2015-46', '2015-47', '2015-48', '2015-49', '2015-50', '2015-51', '2015-52', '2016-00', '2016-01', '2016-02', '2016-03', '2016-04', '2016-05', '2016-06', '2016-07', '2016-08', '2016-09', '2016-10', '2016-11', '2016-12', '2016-13', '2016-14', '2016-15', '2016-16', '2016-17', '2016-18', '2016-19', '2016-20', '2016-21', '2016-22', '2016-23', '2016-24', '2016-25', '2016-26', '2016-27', '2016-28', '2016-29', '2016-30', '2016-31', '2016-32', '2016-33', '2016-34', '2016-35', '2016-36', '2016-37', '2016-38', '2016-39', '2016-40', '2016-41', '2016-42', '2016-43', '2016-44', '2016-45', '2016-46', '2016-47', '2016-48', '2016-49', '2016-50', '2016-51', '2016-52', '2017-00', '2017-01', '2017-02', '2017-03', '2017-04', '2017-05', '2017-06', '2017-07', '2017-08', '2017-09', '2017-10', '2017-11', '2017-12', '2017-13', '2017-14', '2017-15', '2017-16', '2017-17', '2017-18', '2017-19', '2017-20', '2017-21', '2017-22', '2017-23', '2017-24', '2017-25', '2017-26', '2017-27', '2017-28', '2017-29', '2017-30', '2017-31', '2017-32', '2017-33', '2017-34', '2017-35', '2017-36', '2017-37', '2017-38', '2017-39', '2017-40', '2017-41', '2017-42', '2017-43', '2017-44', '2017-45', '2017-46', '2017-47', '2017-48', '2017-49', '2017-50', '2017-51', '2017-52', '2018-01', '2018-02', '2018-03', '2018-04', '2018-05', '2018-06', '2018-07', '2018-08', '2018-09', '2018-10', '2018-11']
 
-def getTokens(li_strings='', stemming=False):
+def getTokens(li_strings='', stemming=False, lemmatizing=False):
 	if stemming:
 		global di_stems
 		di_stems = pickle.load(open('di_stems.p', 'rb'))
@@ -55,7 +56,7 @@ def getTokens(li_strings='', stemming=False):
 		#create list of list for comments and tokens
 		if isinstance(comment, str):
 			li_comment_stemmed = []
-			li_comment_stemmed = tokeniserAndStemmer(comment, stemming=stemming)
+			li_comment_stemmed = tokeniserAndStemmer(comment, stemming=stemming, lemmatizing=lemmatizing)
 			li_comments_stemmed.append(li_comment_stemmed)
 		if index % 1000 == 0:
 			print('Stemming/tokenising finished for string ' + str(index) + '/' + str(len_comments))
@@ -68,7 +69,7 @@ def getTokens(li_strings='', stemming=False):
 
 	return li_comments_stemmed
 
-def tokeniserAndStemmer(string, stemming=False):
+def tokeniserAndStemmer(string, stemming=False, lemmatizing=False):
 	#first, remove urls
 	if 'http' in string:
 		string = re.sub(r'https?:\/\/.*[\r\n]*', ' ', string)
@@ -76,37 +77,47 @@ def tokeniserAndStemmer(string, stemming=False):
 		string = re.sub(r'www.*[\r\n]*', ' ', string)
 
 	#use nltk's tokeniser to get a list of words
-	tokens = [word for sent in nltk.sent_tokenize(string) for word in nltk.word_tokenize(sent)]
+	# from nltk.tokeimport TreebankWordTokenizer
+	# tokenizer = TreebankWordTokenizer()
+	# tokenizer.PARENS_BRACKETS = []
+	# tokens = [word.lower() for sent in nltk.sent_tokenize(string) for word in tokenizer.tokenize(sent)]
+	tokens = re.findall("[a-zA-Z\-\)\(]{3,50}", string)
 	stemmer = SnowballStemmer("english")
 	#list with tokens further processed
 	li_filtered_tokens = []
 	# filter out any tokens not containing letters (e.g., numeric tokens, raw punctuation)
 	for token in tokens:
-		#only alphabetic characters
-		if re.search('[a-zA-Z]', token):
-			#only tokens with three or more characters
-			if len(token) >= 3:
-				#no stopwords
-				if token not in stopwords.words('english'):
-					token = token.lower()
-					#shorten word if it's longer than 20 characters (e.g. 'reeeeeeeeeeeeeeeeeeeeeeeee')
-					if len(token) >= 20:
-						token = token[:20]
-					#stem if indicated it should be stemmed
-					if stemming:
-						token_stemmed = stemmer.stem(token)
-						li_filtered_tokens.append(token_stemmed)
+		token = token.lower()
+		#print(len(tokens))
+		#only alphabetic characters, keep '(' and ')' symbols for echo brackets, only tokens with three or more characters
+		#if re.search('[a-zA-Z\-\)\(]{3,50}', token):
+		if re.match('[a-zA-Z\-\)\(]{3,50}', token) is not None:
+			#no stopwords
+			if token not in stopwords.words('english'):
+				#token = token.lower()
+				#shorten word if it's longer than 20 characters (e.g. 'reeeeeeeeeeeeeeeeeeeeeeeee')
+				if len(token) >= 20:
+					token = token[:20]
+				#stem if indicated it should be stemmed
+				if stemming:
+					token_stemmed = stemmer.stem(token)
+					li_filtered_tokens.append(token_stemmed)
 
-						#update lookup dict with token and stemmed token
-						#lookup dict is dict of stemmed words as keys and lists as full tokens
-						if token_stemmed in di_stems:
-							if token not in di_stems[token_stemmed]:
-								di_stems[token_stemmed].append(token)
-						else:
-							di_stems[token_stemmed] = []
+					#update lookup dict with token and stemmed token
+					#lookup dict is dict of stemmed words as keys and lists as full tokens
+					if token_stemmed in di_stems:
+						if token not in di_stems[token_stemmed]:
 							di_stems[token_stemmed].append(token)
 					else:
-						li_filtered_tokens.append(token)
+						di_stems[token_stemmed] = []
+						di_stems[token_stemmed].append(token)
+				#if lemmatizing is used instead
+				elif lemmatizing:
+					lemmatizer = WordNetLemmatizer()
+					token = lemmatizer.lemmatize(token)
+					li_filtered_tokens.append(token)
+				else:
+					li_filtered_tokens.append(token)
 	return li_filtered_tokens
 
 def getDocSimilarity(li_strings='', dateformat = 'weeks', maxdf = '', dates='', querystring='', load=False, kmeansgraph=False, createcosinematrix=True, storetop100=True, writetfidfcsv=True, load_kmeans=False, mds=True, num_clusters=3, num_kmeans=3):
@@ -357,7 +368,16 @@ def getDocSimilarity(li_strings='', dateformat = 'weeks', maxdf = '', dates='', 
 			plt.show()
 
 
-def getWord2vecModel(train='', load='', modelname='', min_word=200):
+def getW2vModel(train='', load='', modelname='', min_word=200):
+	""" Trains or loads a word2vec model. Input must be a list of strings.
+
+	Keyword arguments:
+	train -- when provided, trains, saved (in binary) and returns a model
+	load -- when provided, loads and returns a model (usually stored in .model.bin)
+	modelname -- name of the saved model
+	min_word -- the minimum amount of occurances of words to be included in the model. Useful for filtering out bloat.
+	"""
+
 	if train != '':
 		print('Training ' + modelname)
 		# train model
@@ -567,4 +587,3 @@ def getW2vCosineDistance(word1, word2, plot=False):
 		createCosineDistHisto(di_cos_dist, word1, word2)
 
 	return di_cos_dist
-

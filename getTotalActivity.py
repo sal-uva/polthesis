@@ -101,15 +101,14 @@ def getTotalActivity(dateformat='months', posts=False, threads=False):
 def addDatesToDb():
 	conn = sqlite3.connect("../4plebs_pol_18_03_2018.db")
 	cursor=conn.cursor()
-	if 1 == 2:
-		cursor.execute("""	CREATE TABLE 'pol_content' AS
-							SELECT num, thread_num, timestamp,
-							strftime('%Y-%m-%d %H:%M:%S', datetime(timestamp, 'unixepoch')) as date_full,
-							op, title, comment, timestamp_expired, media_filename, media_size, media_hash, media_orig, spoiler, deleted, capcode, email, name, trip, sticky, locked, poster_hash, poster_country, exif,
-							strftime('%Y-%m', datetime(timestamp, 'unixepoch')) as date_month,
-							strftime('%Y-%m-%d', datetime(timestamp, 'unixepoch')) as date_day,
-							strftime('%Y-%W', datetime(timestamp, 'unixepoch')) as date_week
-							FROM 'poldatabase_18_03_2018';""")
+	cursor.execute("""	CREATE TABLE 'pol_content' AS
+						SELECT num, thread_num, timestamp,
+						strftime('%Y-%m-%d %H:%M:%S', datetime(timestamp, 'unixepoch')) as date_full,
+						op, title, comment, timestamp_expired, media_filename, media_size, media_hash, media_orig, spoiler, deleted, capcode, email, name, trip, sticky, locked, poster_hash, poster_country, exif,
+						strftime('%Y-%m', datetime(timestamp, 'unixepoch')) as date_month,
+						strftime('%Y-%m-%d', datetime(timestamp, 'unixepoch')) as date_day,
+						strftime('%Y-%W', datetime(timestamp, 'unixepoch')) as date_week
+						FROM 'poldatabase_18_03_2018';""")
 
 def calculateAverageAnon():
 	li_avposts = [0.5]
