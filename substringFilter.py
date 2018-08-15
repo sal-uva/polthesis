@@ -44,17 +44,20 @@ li_times_weeks = [(1417392000, 1417996799), (1417996800, 1418601599), (141860160
 li_labels_weeks = []
 
 def substringFilter(querystring='all', querystring2 = '', histogram = False, mintime = 0, maxtime = 0, stringintitle = False, inputtime = 'months', intrumpthreads = False, normalised = True, writetext = False, docsimilarity = False, wordclusters = False, similaritytype = None):
+
+	"""  """
+
 	querystring = querystring.lower()
 
 	print('Connecting to database')
-	conn = sqlite3.connect("../4plebs_pol_18_03_2018.db")
+	conn = sqlite3.connect("../4plebs_pol_test_database.db")
 
 	#if the trump-threads csv isn't used
 	if intrumpthreads == False:
 		#if you get all comments, filter on 
 		if querystring == 'all':
 			querystring = querystring + '-' + str(datetime.strftime(datetime.fromtimestamp(mintime), "%m-%Y"))
-			df = pd.read_sql_query("SELECT timestamp, date_full, comment, title, num FROM pol_content WHERE timestamp > ? AND timestamp < ?;", conn, params=[mintime, maxtime])
+			df = pd.read_sql_query("SELECT timestamp, comment, title, num FROM poldatabase WHERE timestamp > ? AND timestamp < ?;", conn, params=[mintime, maxtime])
 		#look for string in subject
 		elif stringintitle == True:
 			print('Beginning SQL query for "' + querystring + '" in title')
@@ -66,9 +69,15 @@ def substringFilter(querystring='all', querystring2 = '', histogram = False, min
 			df = pd.read_sql_query("SELECT timestamp, date_full, title, comment, num FROM pol_content WHERE ((lower(comment) LIKE ?) AND (lower(comment) LIKE ?));", conn, params=['%' + querystring + '%', '%' + querystring2 + '%'])
 		else:
 			print('Beginning SQL query for "' + querystring + '" in post body')
+<<<<<<< HEAD
 			df = pd.read_sql_query("SELECT timestamp, date_full, title, comment, num FROM pol_content WHERE lower(comment) LIKE ?;", conn, params=['%' + querystring + '%'])
 
 		print('Writing results to csv')
+=======
+			df = pd.read_sql_query("SELECT timestamp, date_full, title, comment, num FROM pol_content WHERE lower(title) LIKE ?;", conn, params=['%' + querystring + '%'])
+
+		# print('Writing results to csv')
+>>>>>>> a40fe6e762cf2978ad8effbb0e617c4ac5c70878
 		if '/' in querystring:
 			querystring = re.sub(r'/', '', querystring)
 		else:

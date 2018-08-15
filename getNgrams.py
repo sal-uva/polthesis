@@ -21,7 +21,7 @@ from nltk.corpus import stopwords
 # full db: 4plebs_pol_18_03_2018
 # full table: poldatabase_18_03_2018
 
-def getNgrams(querystring, fullcomment = True, colocationamount = 1, windowsize = 4, outputlimit = 10, separateontime = False, timeseparator = 'days', frequencyfilter = 1, timeoffset=None):
+def getNgrams(querystring, fullcomment=True, colocationamount=1, windowsize=4, outputlimit=10, separateontime =False, timeseparator='days', frequencyfilter=1, timeoffset=None):
 	separateontime = separateontime
 	maxoutput = outputlimit
 
@@ -54,7 +54,7 @@ def getNgrams(querystring, fullcomment = True, colocationamount = 1, windowsize 
 		#all text to lowercase
 		longstring = longstring.lower()
 
-		regex = re.compile("[^a-zA-Z]")		#excludes numbers, might have to revise this
+		regex = re.compile("[-//a-zA-Z0-9]{3,}")		#only alphanumeric, three characters or longer
 		longstring = regex.sub(" ",longstring)
 
 		tokenizer = RegexpTokenizer(r"\w+")

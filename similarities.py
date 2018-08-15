@@ -567,3 +567,4 @@ def getW2vCosineDistance(word1, word2, plot=False):
 		createCosineDistHisto(di_cos_dist, word1, word2)
 
 	return di_cos_dist
+
