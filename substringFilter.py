@@ -82,9 +82,15 @@ def substringFilter(querystring='all', querystring2 = '', histogram = False, min
 				df = pd.read_sql_query("SELECT timestamp, comment, title, num, date_full FROM pol_content WHERE lower(title) LIKE ?;", conn, params=['%' + querystring + '%'])
 		#look for sting in comment body (default)
 		else:
+			#if a post should include 2 strings
 			if querystring2 != '':
-				print('Beginning SQL query for "' + querystring + '" and "' + querystring2 + '" in post body')
-				df = pd.read_sql_query("SELECT timestamp, title, comment, num, date_full FROM pol_content WHERE ((lower(comment) LIKE ?) AND (lower(comment) LIKE ?));", conn, params=['%' + querystring + '%', '%' + querystring2 + '%'])
+				if inmonth != '':
+					print('Beginning SQL query for "' + querystring + '" and "' + querystring2 + '" in post body in ' + inmonth)
+					df = pd.read_sql_query("SELECT timestamp, comment, title, num, date_full, date_month FROM pol_content WHERE ((lower(comment) LIKE ?) AND (lower(comment) LIKE ?)) AND date_month = ?;", conn, params=['%' + querystring + '%', '%' + querystring2 + '%', inmonth])
+				else:
+					print('Beginning SQL query for "' + querystring + '" and "' + querystring2 + '" in post body')
+					df = pd.read_sql_query("SELECT timestamp, title, comment, num, date_full FROM pol_content WHERE ((lower(comment) LIKE ?) AND (lower(comment) LIKE ?));", conn, params=['%' + querystring + '%', '%' + querystring2 + '%'])
+			#if a post should contain a singular string
 			else:
 				if inmonth != '':
 					print('Beginning SQL query for "' + querystring + '" in post body in ' + inmonth)
@@ -98,7 +104,12 @@ def substringFilter(querystring='all', querystring2 = '', histogram = False, min
 			querystring = re.sub(r'/', '', querystring)
 		else:
 			querystring = querystring
-		df.to_csv('substring_mentions/mentions_' + querystring + '.csv')
+		if querystring2 != '':
+			querystring2label = '_' + querystring2
+		if inmonth != '':
+			inmonthlabel = '_' + inmonth
+			#df.to_csv('substring_mentions/mentions_' + querystring + '_' + querystring2 + '.csv')
+		df.to_csv('substring_mentions/mentions_' + querystring + querystring2label + inmonthlabel + '.csv')
 	else:
 		df = pd.read_csv('substring_mentions/mentions_trump/trump_threads/trump_threads_15percent_30min.csv', encoding='utf-8')
 

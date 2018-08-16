@@ -376,6 +376,7 @@ def getW2vModel(train='', load='', modelname='', min_word=200):
 	load -- when provided, loads and returns a model (usually stored in .model.bin)
 	modelname -- name of the saved model
 	min_word -- the minimum amount of occurances of words to be included in the model. Useful for filtering out bloat.
+	
 	"""
 
 	if train != '':
