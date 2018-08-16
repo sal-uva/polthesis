@@ -21,17 +21,31 @@ from nltk.corpus import stopwords
 # full db: 4plebs_pol_18_03_2018
 # full table: poldatabase_18_03_2018
 
-def getNgrams(querystring, fullcomment=True, colocationamount=1, windowsize=4, outputlimit=10, separateontime =False, timeseparator='days', frequencyfilter=1, timeoffset=None):
+def getNgrams(querystring, fullcomment=True, nsize=1, windowsize=4, outputlimit=10, separateontime = False, timeseparator='days', frequencyfilter=1, timeoffset=None):
+	"""
+	Creates ngrams from text data in the 4plebs database.
+
+	Keyword arguments:
+	querystring:	string to filter posts on and to associate ngrams with
+					use querystring='triplepars' to get echo brackets
+	fullcomment:	whether to find ngrams in the total post string, or just related to the querystring
+	nsize:			the n-gram size (bigrams, trigrams, etc.)
+	outputlimit:	the amount of ngrams to return
+	separateontime:	whether to check 
+	time
+
+	"""
 	separateontime = separateontime
 	maxoutput = outputlimit
 
 	print('Connecting to database')
-	conn = sqlite3.connect("../4plebs_pol_withheaders.db")
-
-	print('Beginning SQL query for "' + querystring + '"')
-	df = pd.read_sql_query("SELECT timestamp, comment FROM poldatabase WHERE lower(comment) LIKE ?;", conn, params=['%' + querystring + '%'])
+	conn = sqlite3.connect("../4plebs_pol_18_03_2018.db")
+	if querystring == 'triplepars':
+		print('Reading 4chan triplepars csv')
+		df = pd.read_csv('substring_mentions/triplepars-4chan.csv', encoding='utf-8')
+	else:
+		df = pd.read_sql_query("SELECT timestamp, comment FROM pol_content WHERE lower(comment) LIKE ?;", conn, params=['%' + querystring + '%'])
 	print('Writing results to csv')
-	df.to_csv('substring_mentions/mentions_' + querystring + '.csv')
 
 	#take DataFrame columns and convert to list
 	print('Converting DataFrame columns to lists')
@@ -54,24 +68,24 @@ def getNgrams(querystring, fullcomment=True, colocationamount=1, windowsize=4, o
 		#all text to lowercase
 		longstring = longstring.lower()
 
-		regex = re.compile("[-//a-zA-Z0-9]{3,}")		#only alphanumeric, three characters or longer
-		longstring = regex.sub(" ",longstring)
+		#regex = re.compile("[-//a-zA-Z0-9]{3,}")		#only alphanumeric, three characters or longer
+		#longstring = regex.sub(' ',longstring)
 
-		tokenizer = RegexpTokenizer(r"\w+")
+		tokenizer = RegexpTokenizer(r'[a-zA-Z\-\)\(]{3,50}')
 		tmptokens = tokenizer.tokenize(longstring)
 
 		tokens = []
 
 		print('Creating filtered tokens (i.e. excluding stopwords and forbiddenwords)')
 		for word in tmptokens:
-			if word not in stopwords.words("english"):
+			if word not in stopwords.words('english'):
 				if word not in forbiddenwords:
 					match = re.search(word, r'(\d{9})')
 					if not match:		#if it's a post number
 						tokens.append(word)
 
 		print('Generating colocations')
-		colocations = calculateColocation(tokens, windowsize, colocationamount, querystring, fullcomment, frequencyfilter, outputlimit)
+		colocations = calculateColocation(tokens, windowsize, nsize, querystring, fullcomment, frequencyfilter, outputlimit)
 		str_colocations = str(colocations)
 
 	elif separateontime == True:
@@ -80,25 +94,32 @@ def getNgrams(querystring, fullcomment=True, colocationamount=1, windowsize=4, o
 		str_timeinterval = ''
 
 		if timeseparator == 'days':
-			dateformat = '%Y-%m-%d'
+			datecolumn = 'date_day'
 		elif timeseparator == 'months':
-			dateformat = '%Y-%m'
-		currenttimeinverval = datetime.fromtimestamp(li_timestamplist[0]).strftime(dateformat)
+			datecolumn = 'date_month'
 
-		print('starting with ' + currenttimeinverval)
-		for index, timestamp in enumerate(li_timestamplist):
-			#check if the post is the same date as the previous post
-			if currenttimeinverval == datetime.fromtimestamp(timestamp).strftime(dateformat):
-				str_timestring = str(str_timestring) + str(li_posts[index]) + ' '
-			#if its a new day/month, make a new dict entry
-			else:
-				#store old string
-				di_timestrings[currenttimeinverval] = str_timestring
-				str_timeinterval = datetime.fromtimestamp(timestamp).strftime(dateformat)
-				str_timestring = str(li_posts[index])
-				currenttimeinverval = str_timeinterval
-				print('new timeframe: ' + str(currenttimeinverval))
-			di_timestrings[currenttimeinverval] = str_timestring
+		#create a dict with longstring per timeframe (days or months)
+		li_timeframes = df[datecolumn].unique()
+		print('Dates:',li_timeframes)
+		for timeframe in li_timeframes:
+			timeframe_posts = df[df[datecolumn] == timeframe]
+			timeframe_posts = timeframe_posts['comment']
+			timeframe_posts = ' '.join(list(timeframe_posts))
+			di_timestrings[timeframe] = timeframe_posts
+
+		# for index, timestamp in enumerate(li_timestamplist):
+		# 	#check if the post is the same date as the previous post
+		# 	if currenttimeinverval == datetime.fromtimestamp(timestamp).strftime(dateformat):
+		# 		str_timestring = str(str_timestring) + str(li_posts[index]) + ' '
+		# 	#if its a new day/month, make a new dict entry
+		# 	else:
+		# 		#store old string
+		# 		di_timestrings[currenttimeinverval] = str_timestring
+		# 		str_timeinterval = datetime.fromtimestamp(timestamp).strftime(dateformat)
+		# 		str_timestring = str(li_posts[index])
+		# 		currenttimeinverval = str_timeinterval
+		# 		print('new timeframe: ' + str(currenttimeinverval))
+		# 	di_timestrings[currenttimeinverval] = str_timestring
 		di_time_ngrams = {}
 
 		#if there's no matches with the querystring
@@ -107,27 +128,24 @@ def getNgrams(querystring, fullcomment=True, colocationamount=1, windowsize=4, o
 
 		for key, value in di_timestrings.items():
 			print('starting colocations for ' + str(key))
-
 			#all text to lowercase
 			longstring = value.lower()
-			#print(longstring)
-			
-			regex = re.compile("[^a-zA-Z]")		#excludes numbers, might have to revise this
-			longstring = regex.sub(" ", longstring)
-
-			tokenizer = RegexpTokenizer(r"\w+")
+			#tokenise the strings			
+		
+			tokenizer = RegexpTokenizer(r'[a-zA-Z\-]{3,50}|[\(]{3}[a-zA-Z\- ]{1,50}[\)]{3}')
 			tmptokens = tokenizer.tokenize(longstring)
 			tokens = []
-
-			print('Creating filtered tokens (i.e. excluding stopwords and forbiddenwords)')
+			print('Creating filtered tokens (i.e. excluding stopwords and forbidden words)')
 			for word in tmptokens:
-				if word not in stopwords.words("english"):
+				if word not in stopwords.words('english'):
 					if word not in forbiddenwords:
 						match = re.search(word, r'(\d{9})')
 						if not match:		#if it's a post number
 							tokens.append(word)
+			#print(tokens[:100])
 
-			di_time_ngrams[key] = calculateColocation(tokens, windowsize, colocationamount, querystring, fullcomment, frequencyfilter, outputlimit)
+			print('Getting ngrams')
+			di_time_ngrams[key] = calculateColocation(tokens, windowsize, nsize, querystring, fullcomment, frequencyfilter, outputlimit)
 
 			#bigram_measures = nltk.collocations.BigramAssocMeasures()
 			#raw_freq_ranking = finder.nbest(bigram_measures.raw_freq, 10) #top-10
@@ -145,25 +163,26 @@ def getNgrams(querystring, fullcomment=True, colocationamount=1, windowsize=4, o
 
 	return(colocations)
 
-def calculateColocation(inputtokens, windowsize, colocationamount, querystring, fullcomment, frequencyfilter, outputlimit):
+def calculateColocation(inputtokens, windowsize, nsize, querystring, fullcomment, frequencyfilter, outputlimit):
 	#guide here http://www.nltk.org/howto/collocations.html
 	#generate bigrams
-	if colocationamount == 1:
+	if nsize == 1:
 		finder = BigramCollocationFinder.from_words(inputtokens, window_size=windowsize)
 		#filter on bigrams that only contain the query string
 		if fullcomment == False:
-			word_filter = lambda w1, w2: querystring not in (w1, w2)
+			word_filter = lambda w1, w2: '(((they)))' not in (w1, w2)
 			finder.apply_ngram_filter(word_filter)
 	#generate trigrams
-	if colocationamount == 2:
+	if nsize == 2:
 		finder = TrigramCollocationFinder.from_words(inputtokens, window_size=windowsize)
 		#filter on trigrams that only contain the query string
 		if fullcomment == False:
-			word_filter = lambda w1, w2, w3: querystring not in (w1, w2, w3)
+			word_filter = lambda w1, w2, w3: '(((they)))' not in (w1, w2, w3)
 			finder.apply_ngram_filter(word_filter)
 	finder.apply_freq_filter(frequencyfilter)
 
 	colocations = sorted(finder.ngram_fd.items(), key=operator.itemgetter(1), reverse=True)[0:outputlimit]
+	print(colocations[:10])
 	return colocations
 
 def createColocationCsv(inputcolocations):
@@ -199,11 +218,3 @@ def createColocationCsv(inputcolocations):
 		
 	print(df)
 	return(df)
-
-altrightglossary = ['ourguy','based','btfo']
-
-for word in altrightglossary:
-	ngrams = getNgrams(word, fullcomment=False, colocationamount=2, windowsize=4, frequencyfilter=1, outputlimit=50, separateontime=True, timeseparator='months')
-
-print(ngrams)
-print('Colocations completed')
