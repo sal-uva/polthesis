@@ -462,4 +462,3 @@ def getAllActivityHisto(threads=False):
 	# plt.show()
 	plt.savefig('../visualisations/total_activity_' + str_label + '.png', dpi='figure',bbox_inches='tight')
 	plt.savefig('../visualisations/total_activity_' + str_label + '.svg', dpi='figure',bbox_inches='tight')
-

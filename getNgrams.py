@@ -170,14 +170,14 @@ def calculateColocation(inputtokens, windowsize, nsize, querystring, fullcomment
 		finder = BigramCollocationFinder.from_words(inputtokens, window_size=windowsize)
 		#filter on bigrams that only contain the query string
 		if fullcomment == False:
-			word_filter = lambda w1, w2: '(((they)))' not in (w1, w2)
+			word_filter = lambda w1, w2: querystring not in (w1, w2)
 			finder.apply_ngram_filter(word_filter)
 	#generate trigrams
 	if nsize == 2:
 		finder = TrigramCollocationFinder.from_words(inputtokens, window_size=windowsize)
 		#filter on trigrams that only contain the query string
 		if fullcomment == False:
-			word_filter = lambda w1, w2, w3: '(((they)))' not in (w1, w2, w3)
+			word_filter = lambda w1, w2, w3: querystring not in (w1, w2, w3)
 			finder.apply_ngram_filter(word_filter)
 	finder.apply_freq_filter(frequencyfilter)
 
