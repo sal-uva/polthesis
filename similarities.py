@@ -33,11 +33,8 @@ from adjustText import adjust_text
 
 #month variables, so I don't have to mess with datetime
 li_months = ['10-2015','11-2015','12-2015','01-2016','02-2016','03-2016','04-2016','05-2016','06-2016','07-2016','08-2016','09-2016','10-2016','11-2016','12-2016','01-2017','02-2017','03-2017','04-2017','05-2017','06-2017','07-2017','08-2017','09-2017','10-2017','11-2017','12-2017','01-2018','02-2018','03-2018']
-
 li_filenames_months = ['01-16.csv', '01-17.csv', '01-18.csv', '02-16.csv', '02-17.csv', '02-18.csv', '03-16.csv', '03-17.csv', '04-16.csv', '04-17.csv', '05-16.csv', '05-17.csv', '06-15.csv', '06-16.csv', '06-17.csv', '07-15.csv', '07-16.csv', '07-17.csv', '08-15.csv', '08-16.csv', '08-17.csv', '09-15.csv', '09-16.csv', '09-17.csv', '10-15.csv', '10-16.csv', '10-17.csv', '11-15.csv', '11-16.csv', '11-17.csv', '12-15.csv', '12-16.csv', '12-17.csv']
-
 li_labels_months = ['06-15', '07-15', '08-15', '09-15', '10-15', '11-15', '12-15', '01-16', '02-16', '03-16', '04-16', '05-16', '06-16', '07-16', '08-16', '09-16', '10-16', '11-16', '12-16', '01-17', '02-17', '03-17', '04-17', '05-17', '06-17', '07-17', '08-17', '09-17', '10-17', '11-17', '12-17','01-18', '02-18']
-
 li_filenames_weeks = ['2015-26', '2015-27', '2015-28', '2015-29', '2015-30', '2015-31', '2015-32', '2015-33', '2015-34', '2015-35', '2015-36', '2015-37', '2015-38', '2015-39', '2015-40', '2015-41', '2015-42', '2015-43', '2015-44', '2015-45', '2015-46', '2015-47', '2015-48', '2015-49', '2015-50', '2015-51', '2015-52', '2016-00', '2016-01', '2016-02', '2016-03', '2016-04', '2016-05', '2016-06', '2016-07', '2016-08', '2016-09', '2016-10', '2016-11', '2016-12', '2016-13', '2016-14', '2016-15', '2016-16', '2016-17', '2016-18', '2016-19', '2016-20', '2016-21', '2016-22', '2016-23', '2016-24', '2016-25', '2016-26', '2016-27', '2016-28', '2016-29', '2016-30', '2016-31', '2016-32', '2016-33', '2016-34', '2016-35', '2016-36', '2016-37', '2016-38', '2016-39', '2016-40', '2016-41', '2016-42', '2016-43', '2016-44', '2016-45', '2016-46', '2016-47', '2016-48', '2016-49', '2016-50', '2016-51', '2016-52', '2017-00', '2017-01', '2017-02', '2017-03', '2017-04', '2017-05', '2017-06', '2017-07', '2017-08', '2017-09', '2017-10', '2017-11', '2017-12', '2017-13', '2017-14', '2017-15', '2017-16', '2017-17', '2017-18', '2017-19', '2017-20', '2017-21', '2017-22', '2017-23', '2017-24', '2017-25', '2017-26', '2017-27', '2017-28', '2017-29', '2017-30', '2017-31', '2017-32', '2017-33', '2017-34', '2017-35', '2017-36', '2017-37', '2017-38', '2017-39', '2017-40', '2017-41', '2017-42', '2017-43', '2017-44', '2017-45', '2017-46', '2017-47', '2017-48', '2017-49', '2017-50', '2017-51', '2017-52', '2018-01', '2018-02', '2018-03', '2018-04', '2018-05', '2018-06', '2018-07', '2018-08', '2018-09', '2018-10', '2018-11']
 
 def getTokens(li_strings='', stemming=False, lemmatizing=False):
@@ -56,7 +53,7 @@ def getTokens(li_strings='', stemming=False, lemmatizing=False):
 		#create list of list for comments and tokens
 		if isinstance(comment, str):
 			li_comment_stemmed = []
-			li_comment_stemmed = tokeniserAndStemmer(comment, stemming=stemming, lemmatizing=lemmatizing)
+			li_comment_stemmed = getFilteredText(comment, stemming=stemming, lemmatizing=lemmatizing)
 			li_comments_stemmed.append(li_comment_stemmed)
 		if index % 1000 == 0:
 			print('Stemming/tokenising finished for string ' + str(index) + '/' + str(len_comments))
@@ -69,7 +66,7 @@ def getTokens(li_strings='', stemming=False, lemmatizing=False):
 
 	return li_comments_stemmed
 
-def tokeniserAndStemmer(string, stemming=False, lemmatizing=False):
+def getFilteredText(string, stemming=False, lemmatizing=False):
 	#first, remove urls
 	if 'http' in string:
 		string = re.sub(r'https?:\/\/.*[\r\n]*', ' ', string)
@@ -367,59 +364,6 @@ def getDocSimilarity(li_strings='', dateformat = 'weeks', maxdf = '', dates='', 
 
 			plt.show()
 
-
-def getW2vModel(train='', load='', modelname='', min_word=200):
-	""" Trains or loads a word2vec model. Input must be a list of strings.
-
-	Keyword arguments:
-	train -- when provided, trains, saved (in binary) and returns a model
-	load -- when provided, loads and returns a model (usually stored in .model.bin)
-	modelname -- name of the saved model
-	min_word -- the minimum amount of occurances of words to be included in the model. Useful for filtering out bloat.
-	
-	"""
-
-	if train != '':
-		print('Training ' + modelname)
-		# train model
-		# neighbourhood?
-		model = Word2Vec(train, min_count=min_word)
-		# pickle the entire model to disk, so we can load&resume training later
-		model.save(modelname + '.model')
-		#store the learned weights, in a format the original C tool understands
-		model.wv.save_word2vec_format(modelname + '.model.bin', binary=True)
-		return model
-	elif load != '':
-		model = Word2Vec.load(load)
-		return model
-
-def getFastTextModel(train='', load='', modelname='', min_word=200):
-	if train != '':
-		# train model
-		print(train[:10])
-		model = fasttext.FastText(sentences=train, min_count=min_word)
-		model.save('word_embeddings/fasttext/models/' + modelname + '.model.bin')
-		# pickle the entire model to disk, so we can load&resume training later
-		return model
-	elif load != '':
-		model = fasttext.FastText.load('word_embeddings/fasttext/models/' + load)
-		return model
-
-def getGloveModel(train='', load='', modelname='', min_word=''):
-	if train != '':
-		# train model
-		cooccur = glove.Corpus()
-		cooccur.fit(train, window=5)
-		# and train GloVe model itself, using 10 epochs
-		model_glove = glove.Glove(no_components=100, learning_rate=0.05)
-		model_glove.fit(cooccur.matrix, epochs=10)
-		model_glove.save('word_embeddings/fasttext/models/' + modelname + '.model.bin')
-		# pickle the entire model to disk, so we can load&resume training later
-		return model
-	elif load != '':
-		model = fasttext.FastText.load('word_embeddings/fasttext/models/' + load)
-		return model
-
 def showPCAGraph(model):
 	# use t-sne!
 	# PCA is more effective for 'importance' of words
@@ -525,20 +469,8 @@ def getTsneScatterPlot(model, plottitle='', plotname='', perplexity=10, minword=
 	plt.show()
 	plt.gcf().clear()
 
-def getsimilars(word, month):
-	df_similars = pd.DataFrame()
-
-	# word1='must'
-	# word2='have'
-
-	model = getWord2VecModel(load='word2vec/models/w2v_model_all-' + month + '.model')
-	similars = model.wv.most_similar(positive=[word], topn = 30)
-	df_similars[month] = [words[0] for words in similars]
-	df_similars['ratio-' + month] = [int((words[1] * 100)) for words in similars]
-	return df_similars
-
-#split the words in 'comment' column of csv and return list of tokens
 def createTokensFromCsv(file=''):
+	#split the words in 'comment' column of csv and return list of tokens
 	li_allstrings = []
 
 	folder = 'substring_mentions/mentions_trump/months/'

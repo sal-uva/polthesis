@@ -43,26 +43,39 @@ li_labels_months = ['06-15', '07-15', '08-15', '09-15', '10-15', '11-15', '12-15
 li_times_weeks = [(1417392000, 1417996799), (1417996800, 1418601599), (1418601600, 1419206399), (1419206400, 1419811199), (1419811200, 1420415999), (1420416000, 1421020799), (1421020800, 1421625599), (1421625600, 1422230399), (1422230400, 1422835199), (1422835200, 1423439999), (1423440000, 1424044799), (1424044800, 1424649599), (1424649600, 1425254399), (1425254400, 1425859199), (1425859200, 1426463999), (1426464000, 1427068799), (1427068800, 1427673599), (1427673600, 1428278399), (1428278400, 1428883199), (1428883200, 1429487999), (1429488000, 1430092799), (1430092800, 1430697599), (1430697600, 1431302399), (1431302400, 1431907199), (1431907200, 1432511999), (1432512000, 1433116799), (1433116800, 1433721599), (1433721600, 1434326399), (1434326400, 1434931199), (1434931200, 1435535999), (1435536000, 1436140799), (1436140800, 1436745599), (1436745600, 1437350399), (1437350400, 1437955199), (1437955200, 1438559999), (1438560000, 1439164799), (1439164800, 1439769599), (1439769600, 1440374399), (1440374400, 1440979199), (1440979200, 1441583999), (1441584000, 1442188799), (1442188800, 1442793599), (1442793600, 1443398399), (1443398400, 1444003199), (1444003200, 1444607999), (1444608000, 1445212799), (1445212800, 1445817599), (1445817600, 1446422399), (1446422400, 1447027199), (1447027200, 1447631999), (1447632000, 1448236799), (1448236800, 1448841599), (1448841600, 1449446399), (1449446400, 1450051199), (1450051200, 1450655999), (1450656000, 1451260799), (1451260800, 1451865599), (1451865600, 1452470399), (1452470400, 1453075199), (1453075200, 1453679999), (1453680000, 1454284799), (1454284800, 1454889599), (1454889600, 1455494399), (1455494400, 1456099199), (1456099200, 1456703999), (1456704000, 1457308799), (1457308800, 1457913599), (1457913600, 1458518399), (1458518400, 1459123199), (1459123200, 1459727999), (1459728000, 1460332799), (1460332800, 1460937599), (1460937600, 1461542399), (1461542400, 1462147199), (1462147200, 1462751999), (1462752000, 1463356799), (1463356800, 1463961599), (1463961600, 1464566399), (1464566400, 1465171199), (1465171200, 1465775999), (1465776000, 1466380799), (1466380800, 1466985599), (1466985600, 1467590399), (1467590400, 1468195199), (1468195200, 1468799999), (1468800000, 1469404799), (1469404800, 1470009599), (1470009600, 1470614399), (1470614400, 1471219199), (1471219200, 1471823999), (1471824000, 1472428799), (1472428800, 1473033599), (1473033600, 1473638399), (1473638400, 1474243199), (1474243200, 1474847999), (1474848000, 1475452799), (1475452800, 1476057599), (1476057600, 1476662399), (1476662400, 1477267199), (1477267200, 1477871999), (1477872000, 1478476799), (1478476800, 1479081599), (1479081600, 1479686399), (1479686400, 1480291199), (1480291200, 1480895999), (1480896000, 1481500799), (1481500800, 1482105599), (1482105600, 1482710399), (1482710400, 1483315199), (1483315200, 1483919999), (1483920000, 1484524799), (1484524800, 1485129599), (1485129600, 1485734399), (1485734400, 1486339199), (1486339200, 1486943999), (1486944000, 1487548799), (1487548800, 1488153599), (1488153600, 1488758399), (1488758400, 1489363199), (1489363200, 1489967999), (1489968000, 1490572799), (1490572800, 1491177599), (1491177600, 1491782399), (1491782400, 1492387199), (1492387200, 1492991999), (1492992000, 1493596799), (1493596800, 1494201599), (1494201600, 1494806399), (1494806400, 1495411199), (1495411200, 1496015999), (1496016000, 1496620799), (1496620800, 1497225599), (1497225600, 1497830399), (1497830400, 1498435199), (1498435200, 1499039999), (1499040000, 1499644799), (1499644800, 1500249599), (1500249600, 1500854399), (1500854400, 1501459199), (1501459200, 1502063999), (1502064000, 1502668799), (1502668800, 1503273599), (1503273600, 1503878399), (1503878400, 1504483199), (1504483200, 1505087999), (1505088000, 1505692799), (1505692800, 1506297599), (1506297600, 1506902399), (1506902400, 1507507199), (1507507200, 1508111999), (1508112000, 1508716799), (1508716800, 1509321599), (1509321600, 1509926399), (1509926400, 1510531199), (1510531200, 1511135999), (1511136000, 1511740799), (1511740800, 1512345599), (1512345600, 1512950399), (1512950400, 1513555199), (1513555200, 1514159999), (1514160000, 1514764799), (1514764800, 1515369599), (1515369600, 1515974399), (1515974400, 1516579199), (1516579200, 1517183999), (1517184000, 1517788799), (1517788800, 1518393599), (1518393600, 1518998399), (1518998400, 1519603199), (1519603200, 1520207999), (1520208000, 1520812799), (1520812800, 1521417599)]
 li_labels_weeks = []
 
-def substringFilter(querystring='all', querystring2 = '', histogram = False, mintime = 0, maxtime = 0, stringintitle = False, inputtime = 'months', inmonth='', intrumpthreads = False, normalised = True, writetext = False, docsimilarity = False, wordclusters = False, similaritytype = None, debug=False):
+def substringFilter(querystring='all', querystring2 = '', histogram = False, mintime = 0, maxtime = 0, stringintitle = False, inputtime = 'months', inmonth='', intrumpthreads = False, normalised = True, writetext = False, docsimilarity = False, wordclusters = False, similaritytype = None, debug = False):
 
 	"""  
-	Keywords:
-	inmonth: only get posts that are in a certain month. Notes as string (e.g. 2014-01)
+	Keywords
+	querystring:	string,		the substring to query in the db
+	querystring2:	string,		a second querystring to look for (now 'AND' - change to list later)
+	histogram:		bool,		whether to save a histogram of mentions of the querystring
+	mintime:		int,		(gmt timestamp), start of dates to filter on
+	maxtime:		int,		(gmt timestamp), end of dates to filter on
+	stringintitle:	bool,		whether to check for the substring in the title
+	inputtime:		string,		the timeframe to separate the analytics (histogram, docsimilarity) on (days, months, or years)
+	inmonth:		string,		only get posts that are in a certain month. Notes as string (e.g. 2014-01)
+	intrumpthreads:	bool,		whether to check within the trump-dense threads table
+	normalised:		bool,		whether to draw a normalised line on the histogram
+	writetext:		bool,		whether to write .txt files of the posts containing the substring (useful to generate wordtrees)
+	docsimilarity:	bool,		whether to check for document similarity of time-separated documents
+	similaritytype:	string,		'docs' or 'words'
+	debug:			bool,		if true, uses the smaller test 4plebs database
 
 	"""
 
 	querystring = querystring.lower()
 
+	#connect to a smaller database for debug purposes
 	print('Connecting to database')
-
-	#connect to a smaller databse for debug purposes
 	if debug:
 		conn = sqlite3.connect("../4plebs_pol_test_database.db")
 	else:
 		conn = sqlite3.connect("../4plebs_pol_18_03_2018.db")
-
+	
 	#if the trump-threads csv isn't used
 	if intrumpthreads == False:
+		
 		#if you get all comments, filter on 
 		if querystring == 'all':
 			querystring = querystring + '-' + inmonth
@@ -72,14 +85,16 @@ def substringFilter(querystring='all', querystring2 = '', histogram = False, min
 			else:
 				print('Beginning SQL query for all posts between ' + str(mintime) + ' and ' + str(maxtime))
 				df = pd.read_sql_query("SELECT timestamp, comment, title, num, date_full FROM pol_content WHERE timestamp > ? AND timestamp < ?;", conn, params=[mintime, maxtime])
+		
 		#look for string in subject
 		elif stringintitle == True:
 			if querystring2 != '':
-				print('Beginning SQL query for "' + querystring + '" and "' + querystring2 + '" in post body')
+				print('Beginning SQL query for "' + querystring + '" and "' + querystring2 + '" in post title')
 				df = pd.read_sql_query("SELECT timestamp, title, comment, num, date_full FROM pol_content WHERE ((lower(title) LIKE ?) OR (lower(title) LIKE ?));", conn, params=['%' + querystring + '%', '%' + querystring2 + '%'])
 			else:
-				print('Beginning SQL query for "' + querystring + '" in post body')
+				print('Beginning SQL query for "' + querystring + '" in post title')
 				df = pd.read_sql_query("SELECT timestamp, comment, title, num, date_full FROM pol_content WHERE lower(title) LIKE ?;", conn, params=['%' + querystring + '%'])
+		
 		#look for sting in comment body (default)
 		else:
 			#if a post should include 2 strings
@@ -90,6 +105,7 @@ def substringFilter(querystring='all', querystring2 = '', histogram = False, min
 				else:
 					print('Beginning SQL query for "' + querystring + '" and "' + querystring2 + '" in post body')
 					df = pd.read_sql_query("SELECT timestamp, title, comment, num, date_full FROM pol_content WHERE ((lower(comment) LIKE ?) AND (lower(comment) LIKE ?));", conn, params=['%' + querystring + '%', '%' + querystring2 + '%'])
+			
 			#if a post should contain a singular string
 			else:
 				if inmonth != '':
@@ -100,16 +116,22 @@ def substringFilter(querystring='all', querystring2 = '', histogram = False, min
 					df = pd.read_sql_query("SELECT timestamp, comment, title, num, date_full FROM pol_content WHERE lower(comment) LIKE ?;", conn, params=['%' + querystring + '%'])
 
 		# print('Writing results to csv')
+		querystring2label = ''
+		inmonthlabel = ''
+		
 		if '/' in querystring:
 			querystring = re.sub(r'/', '', querystring)
 		else:
 			querystring = querystring
+
 		if querystring2 != '':
 			querystring2label = '_' + querystring2
+
 		if inmonth != '':
 			inmonthlabel = '_' + inmonth
 			#df.to_csv('substring_mentions/mentions_' + querystring + '_' + querystring2 + '.csv')
 		df.to_csv('substring_mentions/mentions_' + querystring + querystring2label + inmonthlabel + '.csv')
+	
 	else:
 		df = pd.read_csv('substring_mentions/mentions_trump/trump_threads/trump_threads_15percent_30min.csv', encoding='utf-8')
 
@@ -172,37 +194,47 @@ def substringFilter(querystring='all', querystring2 = '', histogram = False, min
 	return df
 
 def writeToText(inputdf, querystring, currenttime):
-
 	directory = 'substring_mentions/longstring_' + querystring.replace(' ', '-')
+
 	if not os.path.exists(directory):
 		os.makedirs(directory)
-	txtfile = open(directory + '/longstring_' + querystring + '_' + currenttime + '.txt', 'w', encoding='utf-8')
+
+	#write a txt file with all the strings
+	txtfile_full = open(directory + '/longstring_' + querystring + '_full.txt', 'a', encoding='utf-8')
+	#write time separated txt files
+	txtfile_sep = open(directory + '/longstring_' + querystring + '_' + currenttime + '.txt', 'w', encoding='utf-8')
 	str_keyword = ''
 	li_str = []
+
 	for item in inputdf['comments']:
 		item = item.lower()
-		regex = re.compile("[^a-zA-Z \.\,\-\n]")		#excludes numbers, might have to revise this
-		item = regex.sub("", item)
-		txtfile.write("%s" % item)
+		#regex = re.compile("[^a-zA-Z \.\,\-\n]")		# old regex, excludes numbers
+		regex = re.compile('[^a-zA-Z\)\(\.\,\-\n ]')	# includes brackets
+		item = regex.sub('', item)
+		txtfile_sep.write('%s' % item)
+		txtfile_full.write('%s' % item)
 		str_keyword = str_keyword + item
 		li_str.append(item)
+
 	return str_keyword, li_str
 
 def getTimeSeparatedCsvs(df='', timesep='months'):
 	df_all = pd.read_csv(df, encoding='utf-8')
+
 	if timesep == 'months':
 		for index, tpl_time in enumerate(li_times_months):
 			print('working on ' + li_labels_months[index])
 			df_timesep = pd.DataFrame()
 			df_timesep = df_all[df_all['timestamp'].between(tpl_time[0], tpl_time[1])]
 			df_timesep.to_csv('substring_mentions/mentions_trump/months/mentions_trump_' + li_labels_months[index] + '.csv', encoding='utf-8')
+
 	elif timesep == 'weeks':
 		for index, tpl_time in enumerate(li_times_weeks):
 			timestamp = tpl_time[0]
 			print(timestamp)
-			timetup = datetime.fromtimestamp(tpl_time[0]).isocalendar()
-			year = (timetup)[0]
-			week = (timetup)[1]
+			tup_time = datetime.fromtimestamp(tpl_time[0]).isocalendar()
+			year = (tup_time)[0]
+			week = (tup_time)[1]
 			print('working on ' + str(week) + '-' + str(year))
 			df_timesep = pd.DataFrame()
 			df_timesep = df_all[df_all['timestamp'].between(tpl_time[0], tpl_time[1])]
@@ -213,8 +245,8 @@ def getTrumpThreads(querystring='', getdf=True, maketables=False, getMetaInfo=Fa
 	conn = sqlite3.connect("../4plebs_pol_18_03_2018.db")
 
 	print('Fetching all OPs with "trump"')
-	if maketables:
-		
+
+	if maketables:	
 		cursor = conn.cursor()
 		cursor.execute("""
 					CREATE TABLE trump_threads_tmp AS
@@ -251,8 +283,8 @@ def getTrumpThreads(querystring='', getdf=True, maketables=False, getMetaInfo=Fa
 		df_trumpthreads = pd.read_sql_query("""
 					SELECT thread_num, num, op, timestamp, title, comment, timestamp_expired, media_filename, media_hash, name, trip, sticky, poster_hash, poster_country, date_month, date_week FROM pol_content
 					WHERE thread_num IN (
-        				SELECT trump_threads.threadno FROM trump_threads
-        				WHERE (trump_threads.trump_density >= 0.15 AND trump_threads.thread_count >= 30)
+						SELECT trump_threads.threadno FROM trump_threads
+						WHERE (trump_threads.trump_density >= 0.15 AND trump_threads.thread_count >= 30)
 					)
 					""",conn)
 		return df_trumpthreads
@@ -261,4 +293,3 @@ def getTrumpThreads(querystring='', getdf=True, maketables=False, getMetaInfo=Fa
 					SELECT * FROM trump_threads
 					""",conn)
 		print(df_trumpthreads_meta[:50])
-
