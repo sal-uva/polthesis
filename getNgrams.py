@@ -21,7 +21,7 @@ from nltk.corpus import stopwords
 # full db: 4plebs_pol_18_03_2018
 # full table: poldatabase_18_03_2018
 
-def getNgrams(querystring, fullcomment=True, nsize=1, windowsize=4, outputlimit=10, separateontime = False, timeseparator='days', frequencyfilter=1, timeoffset=None):
+def getNgrams(querystring, fullcomment=True, nsize=1, windowsize=4, outputlimit=10, separateontime = False, timeseparator='days', frequencyfilter=1, timeoffset=None, matchword=''):
 	"""
 	Creates ngrams from text data in the 4plebs database.
 
@@ -33,10 +33,12 @@ def getNgrams(querystring, fullcomment=True, nsize=1, windowsize=4, outputlimit=
 	outputlimit:	the amount of ngrams to return
 	separateontime:	whether to check 
 	time
-
+	matchword:		string to match collocations with
 	"""
 	separateontime = separateontime
 	maxoutput = outputlimit
+	if matchword == '':
+		matchword = querystring
 
 	print('Connecting to database')
 	conn = sqlite3.connect("../4plebs_pol_18_03_2018.db")
@@ -67,7 +69,6 @@ def getNgrams(querystring, fullcomment=True, nsize=1, windowsize=4, outputlimit=
 
 		#all text to lowercase
 		longstring = longstring.lower()
-
 		#regex = re.compile("[-//a-zA-Z0-9]{3,}")		#only alphanumeric, three characters or longer
 		#longstring = regex.sub(' ',longstring)
 
@@ -85,7 +86,7 @@ def getNgrams(querystring, fullcomment=True, nsize=1, windowsize=4, outputlimit=
 						tokens.append(word)
 
 		print('Generating colocations')
-		colocations = calculateColocation(tokens, windowsize, nsize, querystring, fullcomment, frequencyfilter, outputlimit)
+		colocations = calculateColocation(tokens, windowsize, nsize, querystring, fullcomment, frequencyfilter, outputlimit, matchword=matchword)
 		str_colocations = str(colocations)
 
 	elif separateontime == True:
@@ -130,8 +131,7 @@ def getNgrams(querystring, fullcomment=True, nsize=1, windowsize=4, outputlimit=
 			print('starting colocations for ' + str(key))
 			#all text to lowercase
 			longstring = value.lower()
-			#tokenise the strings			
-		
+			#tokenise the strings
 			tokenizer = RegexpTokenizer(r'[a-zA-Z\-]{3,50}|[\(]{3}[a-zA-Z\- ]{1,50}[\)]{3}')
 			tmptokens = tokenizer.tokenize(longstring)
 			tokens = []
@@ -145,7 +145,7 @@ def getNgrams(querystring, fullcomment=True, nsize=1, windowsize=4, outputlimit=
 			#print(tokens[:100])
 
 			print('Getting ngrams')
-			di_time_ngrams[key] = calculateColocation(tokens, windowsize, nsize, querystring, fullcomment, frequencyfilter, outputlimit)
+			di_time_ngrams[key] = calculateColocation(tokens, windowsize, nsize, querystring, fullcomment, frequencyfilter, outputlimit, matchword=matchword)
 
 			#bigram_measures = nltk.collocations.BigramAssocMeasures()
 			#raw_freq_ranking = finder.nbest(bigram_measures.raw_freq, 10) #top-10
@@ -154,30 +154,34 @@ def getNgrams(querystring, fullcomment=True, nsize=1, windowsize=4, outputlimit=
 
 	print('Generating RankFlow-capable csv of colocations')
 	rankflow_df = createColocationCsv(colocations)
-	rankflow_df.to_csv('colocations/' + querystring + '-colocations.csv', encoding='utf-8')
+	rankflow_df.to_csv('colocations/' + querystring + '_' + matchword + '-fullcomment-colocations-.csv', encoding='utf-8')
+	rankflow_df.to_csv('C:/Users/hagen/Dropbox/Universiteit van Amsterdam/work/' + querystring + '_' + matchword + '-fullcomment-colocations-.csv', encoding='utf-8')
 
 	print('Writing restults to textfile')
-	write_handle = open('colocations/' + str(querystring) + '-colocations.txt',"w")
+	write_handle = open('colocations/' + str(querystring) + '_' + matchword + '-fullcomment-colocations-.txt',"w")
+	write_handle = open('C:/Users/hagen/Dropbox/Universiteit van Amsterdam/work/' + str(querystring) + '_' + matchword + '-fullcomment-colocations-.txt',"w")
 	write_handle.write(str(str_colocations))
 	write_handle.close()
 
 	return(colocations)
 
-def calculateColocation(inputtokens, windowsize, nsize, querystring, fullcomment, frequencyfilter, outputlimit):
+def calculateColocation(inputtokens, windowsize, nsize, querystring, fullcomment, frequencyfilter, outputlimit, matchword=''):
 	#guide here http://www.nltk.org/howto/collocations.html
 	#generate bigrams
+	if matchword == '':
+		matchword = querystring
 	if nsize == 1:
 		finder = BigramCollocationFinder.from_words(inputtokens, window_size=windowsize)
 		#filter on bigrams that only contain the query string
 		if fullcomment == False:
-			word_filter = lambda w1, w2: '(((they)))' not in (w1, w2)
+			word_filter = lambda w1, w2: matchword not in (w1, w2)
 			finder.apply_ngram_filter(word_filter)
 	#generate trigrams
 	if nsize == 2:
 		finder = TrigramCollocationFinder.from_words(inputtokens, window_size=windowsize)
 		#filter on trigrams that only contain the query string
 		if fullcomment == False:
-			word_filter = lambda w1, w2, w3: '(((they)))' not in (w1, w2, w3)
+			word_filter = lambda w1, w2, w3: matchword not in (w1, w2, w3)
 			finder.apply_ngram_filter(word_filter)
 	finder.apply_freq_filter(frequencyfilter)
 
