@@ -6,6 +6,7 @@ import sqlite3
 import pandas as pd
 import getTripleParsContent as threepars
 import getNgrams as ngram
+<<<<<<< HEAD
 import getTokens
 import os
 
