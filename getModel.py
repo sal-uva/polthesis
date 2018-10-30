@@ -2,7 +2,7 @@ import pandas as pd
 from gensim.models import Word2Vec
 from gensim.models import fasttext
 
-def getW2vModel(load, train='', modelname='', min_word=200):
+def getW2vModel(load='', train='', modelname='', min_word=200):
 	""" Trains or loads a word2vec model. Input must be a list of strings.
 
 	Keyword arguments:
