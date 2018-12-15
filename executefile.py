@@ -6,15 +6,14 @@ import sqlite3
 import pandas as pd
 import getTripleParsContent as threepars
 import getNgrams as ngram
-<<<<<<< HEAD
 import getTokens
 import os
 
-li_quarterly_months = ['2017-03','2017-05','2017-06','2017-08','2017-09','2017-11','2017-12','2018-02']
-quit()
-for filename in os.listdir('tokens/todo'):
-	tokens = pickle.load(open('tokens/todo/' + filename, 'rb'))
-	getmod.getW2vModel(train=tokens, modelname=filename)
+li_quarterly_months = ['2015-05','2015-06','2015-10','2016-04']
+
+# for filename in os.listdir('tokens/todo'):
+# 	tokens = pickle.load(open('tokens/todo/' + filename, 'rb'))
+# 	getmod.getW2vModel(train=tokens, modelname=filename)
 	#pickle.dump(model, open('word_embeddings/word2vec/models_withpars/' + filename ''))
 
 for index, month in enumerate(li_quarterly_months):
